@@ -23,13 +23,19 @@ import javax.swing.JPanel;
 public class Game extends JPanel {
     static int playerSize = 20;
     static int enemySize = 20;
+    static int rockSize = 20;
     static int numEnemies = (int) (Math.random() * 20);
+    static int numRocks = (int) (Math.random() * 500);
     static int[] enemyXLocations = new int[numEnemies];
     static int[] enemyYLocations = new int[numEnemies];
+    static int[] rockXLocations = new int[numRocks];
+    static int[] rockYLocations = new int[numRocks];
     static int xframe = 800;
     static int yframe = 600;
-    static int x = 0;
-    static int y = 0;
+    static int x = 400;
+    static int y = 300;
+    static int lastDir = 0; //1 up, 2 left, 3 down, 4 right
+    static int[] enemyLastDir = new int[numEnemies];
     private static void moveBallLeft() {
         if (x > 0) x -= playerSize;
     }
@@ -55,13 +61,24 @@ public class Game extends JPanel {
             Graphics2D enemy = (Graphics2D) g;
             enemy.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            enemy.fillRect(enemyXLocations[a], enemyYLocations[a], playerSize, playerSize);
+            enemy.fillRect(enemyXLocations[a], enemyYLocations[a], enemySize, enemySize);
+        }
+        for(int a = 0; a < numRocks; a++){
+            g.setColor(Color.BLACK);
+            Graphics2D rock = (Graphics2D) g;
+            rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+            rock.fillRect(rockXLocations[a], rockYLocations[a], rockSize, rockSize);
         }
         
     }
     
     public static int roundEnemyLocation(int n) {
         return (n + enemySize-1) / enemySize * enemySize;
+    }
+    
+    public static int roundRockLocation(int n) {
+        return (n + rockSize-1) / rockSize * rockSize;
     }
     
     public static void generateEnemies() {
@@ -72,18 +89,40 @@ public class Game extends JPanel {
             enemyYLocations[a] = roundEnemyLocation(tempY);
         }
     }
+   
+    public static void generateRocks() {
+        for (int a = 0; a < numRocks; a++) {
+            int tempX = (int) (Math.random() * xframe);
+            int tempY = (int) (Math.random() * yframe);
+            rockXLocations[a] = roundRockLocation(tempX);
+            rockYLocations[a] = roundRockLocation(tempY);
+        }
+    }
     
     public static boolean collisionDetect(int x1, int y1, int x2, int y2){
         return (x1 == x2 && y1 == y2);
     }
+   
     
-    public static void initAI() throws InterruptedException{
+    public static void initAI(){
         for (int a = 0; a < numEnemies; a++){
             double temp = Math.random();
-            if (temp < .25 && enemyXLocations[a]-20 > 0) enemyXLocations[a] -= enemySize;
-            else if (temp < .5 && temp >= .25 && enemyXLocations[a]+20 < xframe) enemyXLocations[a] += enemySize;
-            if (temp < .75 && temp >= .5 && enemyYLocations[a]-20 > 0) enemyYLocations[a] -= enemySize;
-            else if (temp < 1 && temp >= .75 && enemyYLocations[a]+20 < yframe) enemyYLocations[a] += enemySize;
+            if (temp < .25 && enemyXLocations[a]-enemySize >= 0) {
+                enemyXLocations[a] -= enemySize;
+                enemyLastDir[a] = 2;
+            }
+            else if (temp < .5 && temp >= .25 && enemyXLocations[a]+enemySize < xframe) {
+                enemyXLocations[a] += enemySize;
+                enemyLastDir[a] = 4;
+            }
+            if (temp < .75 && temp >= .5 && enemyYLocations[a]-enemySize >= 0) {
+                enemyYLocations[a] -= enemySize;
+                enemyLastDir[a] = 1;
+            }
+            else if (temp < 1 && temp >= .75 && enemyYLocations[a]+enemySize < yframe) {
+                enemyYLocations[a] += enemySize;
+                enemyLastDir[a] = 3;
+            }
         }
     }
 
@@ -105,15 +144,19 @@ public class Game extends JPanel {
                 }
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_W:
+                        lastDir = 1;
                         moveBallUp();
                         break;
                     case KeyEvent.VK_A:
+                        lastDir = 2;
                         moveBallLeft();
                         break;
                     case KeyEvent.VK_S:
+                        lastDir = 3;
                         moveBallDown();
                         break;
                     case KeyEvent.VK_D:
+                        lastDir = 4;
                         moveBallRight();
                         break;
                     default:
@@ -127,6 +170,7 @@ public class Game extends JPanel {
             }
         });
         generateEnemies();
+        generateRocks();
         int aiTimer = 0;
         Game game = new Game();
         frame.add(game);
@@ -143,6 +187,46 @@ public class Game extends JPanel {
             for (int a = 0; a < numEnemies; a++){
                 if (collisionDetect(x, y, enemyXLocations[a], enemyYLocations[a])){
                     System.exit(1);
+                }
+            }
+            for (int a = 0; a < numRocks; a++){
+                if (collisionDetect(x, y, rockXLocations[a], rockYLocations[a])){
+                    switch(lastDir){
+                        case 1: //up
+                            y += playerSize;
+                            break;
+                        case 2: //left
+                            x += playerSize;
+                            break;
+                        case 3: //down
+                            y -= playerSize;
+                            break;
+                        case 4: //right
+                            x -= playerSize;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                for (int b = 0; b < numEnemies; b++) {
+                    if (collisionDetect(enemyXLocations[b], enemyYLocations[b], rockXLocations[a], rockYLocations[a])){
+                        switch(enemyLastDir[b]){
+                            case 1: //up
+                                enemyYLocations[b] += enemySize;
+                                break;
+                            case 2: //left
+                                enemyXLocations[b] += enemySize;
+                                break;
+                            case 3: //down
+                                enemyYLocations[b] -= enemySize;
+                                break;
+                            case 4: //right
+                                enemyXLocations[b] -= enemySize;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                 }
             }
             game.repaint();
