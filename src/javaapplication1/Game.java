@@ -72,6 +72,20 @@ public class Game extends JPanel {
             enemyYLocations[a] = roundEnemyLocation(tempY);
         }
     }
+    
+    public static boolean collisionDetect(int x1, int y1, int x2, int y2){
+        return (x1 == x2 && y1 == y2);
+    }
+    
+    public static void initAI() throws InterruptedException{
+        for (int a = 0; a < numEnemies; a++){
+            double temp = Math.random();
+            if (temp < .25 && enemyXLocations[a]-20 > 0) enemyXLocations[a] -= enemySize;
+            else if (temp < .5 && temp >= .25 && enemyXLocations[a]+20 < xframe) enemyXLocations[a] += enemySize;
+            if (temp < .75 && temp >= .5 && enemyYLocations[a]-20 > 0) enemyYLocations[a] -= enemySize;
+            else if (temp > 1 && temp >= .75 && enemyYLocations[a]+20 < yframe) enemyYLocations[a] += enemySize;
+        }
+    }
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -113,6 +127,7 @@ public class Game extends JPanel {
             }
         });
         generateEnemies();
+        int aiTimer = 0;
         Game game = new Game();
         frame.add(game);
         frame.setSize(xframe, yframe);
@@ -121,8 +136,18 @@ public class Game extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         while (true) {
+            if (aiTimer == 50) {
+                aiTimer = 0;
+                initAI();
+            }
+            for (int a = 0; a < numEnemies; a++){
+                if (collisionDetect(x, y, enemyXLocations[a], enemyYLocations[a])){
+                    System.exit(1);
+                }
+            }
             game.repaint();
             Thread.sleep(10);
+            aiTimer++;
         }
     }
 }
