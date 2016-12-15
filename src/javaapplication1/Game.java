@@ -83,7 +83,7 @@ public class Game extends JPanel {
             if (temp < .25 && enemyXLocations[a]-20 > 0) enemyXLocations[a] -= enemySize;
             else if (temp < .5 && temp >= .25 && enemyXLocations[a]+20 < xframe) enemyXLocations[a] += enemySize;
             if (temp < .75 && temp >= .5 && enemyYLocations[a]-20 > 0) enemyYLocations[a] -= enemySize;
-            else if (temp > 1 && temp >= .75 && enemyYLocations[a]+20 < yframe) enemyYLocations[a] += enemySize;
+            else if (temp < 1 && temp >= .75 && enemyYLocations[a]+20 < yframe) enemyYLocations[a] += enemySize;
         }
     }
 
@@ -136,7 +136,7 @@ public class Game extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         while (true) {
-            if (aiTimer == 50) {
+            if (aiTimer == 25) {
                 aiTimer = 0;
                 initAI();
             }
