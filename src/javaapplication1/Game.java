@@ -29,8 +29,8 @@ public class Game extends JPanel {
     static int enemySize = 20;
     static int rockSize = 20;
     static int playerHP = 100;
-    static final int numEnemies = (int) (Math.random() * 20);
-    static final int numRocks = (int) (Math.random() * 500);
+    static final int numEnemies = (int) (Math.random() * 50);
+    static final int numRocks = (int) 500;//(Math.random() * 500);
     static int[] enemyXLocations = new int[numEnemies];
     static int[] enemyYLocations = new int[numEnemies];
     static int[] rockXLocations = new int[numRocks];
@@ -54,15 +54,38 @@ public class Game extends JPanel {
         if (y < yframe - 60) y += playerSize;
     }
     
-    final BufferedImage image;
+    public static void generateMap() {
+        int densityMultiplier = 6;
+        int power = (int)(Math.random() * densityMultiplier);
+        int rockCount = 0;
+        for (int a = 0; a < xframe; a+=rockSize) {
+            for (int b = 0; b < yframe; b+=rockSize) {
+                while(power > 0) {
+                    b += 20;
+                    power--;
+                }
+                if (a == x && b == y) { //rock would spawn on player
+                    b += rockSize;
+                }
+                rockXLocations[rockCount] = roundRockLocation(a);
+                rockYLocations[rockCount] = roundRockLocation(b);
+                if (rockCount++ >= numRocks-1) {
+                    return;
+                }
+                power = (int)(Math.random() * densityMultiplier);
+            }
+        }
+    }
+    
+    final BufferedImage background;
 
     public Game() throws IOException {
-        this.image = ImageIO.read(new File("C:\\Users\\Nathan\\Documents\\GitHub\\game\\src\\javaapplication1\\stone.jpg"));
+        this.background = ImageIO.read(new File("C:\\Users\\Nathan\\Documents\\GitHub\\game\\src\\javaapplication1\\stone.jpg"));
     }
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
-        g.drawImage(image, 0, 0, this);
+        g.drawImage(background, 0, 0, this);
         g.setColor(Color.BLACK);
         g.fillRect(5, 10, 110, 55);
         g.setColor(Color.BLUE);
@@ -194,7 +217,8 @@ public class Game extends JPanel {
             }
         });
         generateEnemies();
-        generateRocks();
+        generateMap();
+        //generateRocks();
         int aiTimer = 0;
         Game game = new Game();
         frame.add(game);
