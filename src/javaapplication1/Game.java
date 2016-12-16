@@ -11,6 +11,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 /**
@@ -49,9 +53,16 @@ public class Game extends JPanel {
     private static void moveBallDown() {
         if (y < yframe - 60) y += playerSize;
     }
+    
+    final BufferedImage image;
+
+    public Game() throws IOException {
+        this.image = ImageIO.read(new File("C:\\Users\\Nathan\\Documents\\GitHub\\game\\src\\javaapplication1\\stone.jpg"));
+    }
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
+        g.drawImage(image, 0, 0, this);
         g.setColor(Color.BLACK);
         g.fillRect(5, 10, 110, 55);
         g.setColor(Color.BLUE);
@@ -67,7 +78,7 @@ public class Game extends JPanel {
             enemy.fillRect(enemyXLocations[a], enemyYLocations[a], enemySize, enemySize);
         }
         for(int a = 0; a < numRocks; a++){
-            g.setColor(Color.DARK_GRAY);
+            g.setColor(Color.BLACK);
             Graphics2D rock = (Graphics2D) g;
             rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
@@ -139,7 +150,7 @@ public class Game extends JPanel {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
         JFrame frame = new JFrame("Game"); 
         
