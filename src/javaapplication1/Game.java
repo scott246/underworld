@@ -29,14 +29,17 @@ public class Game extends JPanel {
     static int enemySize = 20;
     static int rockSize = 20;
     static int playerHP = 100;
-    static final int numEnemies = (int) (Math.random() * 50);
-    static final int numRocks = (int) 500;//(Math.random() * 500);
+    static int playerMinDamage = 1;
+    static int playerMaxDamage = 2;
+    static final int numEnemies = (int) Math.ceil(Math.random() * 50);
+    static final int numRocks = (int) 1000;//(Math.random() * 500);
     static int[] enemyXLocations = new int[numEnemies];
     static int[] enemyYLocations = new int[numEnemies];
+    static int[] enemyHP = new int[numEnemies];
     static int[] rockXLocations = new int[numRocks];
     static int[] rockYLocations = new int[numRocks];
-    static int xframe = 800;
-    static int yframe = 600;
+    static int xframe = 805;
+    static int yframe = 595;
     static int x = 400;
     static int y = 300;
     static int lastDir = 0; //1 up, 2 left, 3 down, 4 right
@@ -60,7 +63,21 @@ public class Game extends JPanel {
         int rockCount = 0;
         for (int a = 0; a < xframe; a+=rockSize) {
             for (int b = 0; b < yframe; b+=rockSize) {
+                if (a == 0 || b == 0 || a == xframe-rockSize * 2 || b == yframe-rockSize * 2) {
+                    rockXLocations[rockCount] = roundRockLocation(a);
+                    rockYLocations[rockCount] = roundRockLocation(b); 
+                    if (rockCount++ >= numRocks-1) {
+                        return;
+                    }
+                }
                 while(power > 0) {
+                    if (a == 0 || b == 0 || a == xframe-rockSize * 2 || b == yframe-rockSize * 2) {
+                        rockXLocations[rockCount] = roundRockLocation(a);
+                        rockYLocations[rockCount] = roundRockLocation(b); 
+                        if (rockCount++ >= numRocks-1) {
+                            return;
+                        }
+                    }
                     b += 20;
                     power--;
                 }
@@ -87,18 +104,22 @@ public class Game extends JPanel {
         super.paint(g);        
         g.drawImage(background, 0, 0, this);
         g.setColor(Color.BLACK);
-        g.fillRect(5, 10, 110, 55);
+        g.fillRect(0, 0, 800, 40);
         g.setColor(Color.BLUE);
         Graphics2D player = (Graphics2D) g;
         player.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
         player.fillOval(x, y, playerSize, playerSize);
         for(int a = 0; a < numEnemies; a++){
-            g.setColor(Color.RED);
-            Graphics2D enemy = (Graphics2D) g;
-            enemy.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-            enemy.fillRect(enemyXLocations[a], enemyYLocations[a], enemySize, enemySize);
+            if (enemyXLocations[a] >= 0) {
+                g.setColor(Color.RED);
+                Graphics2D enemy = (Graphics2D) g;
+                enemy.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+                enemy.fillRect(enemyXLocations[a], enemyYLocations[a], enemySize, enemySize);
+                g.setColor(Color.BLACK);
+                enemy.drawString(Integer.toString(enemyHP[a]), enemyXLocations[a], enemyYLocations[a]+enemySize/2);
+            }
         }
         for(int a = 0; a < numRocks; a++){
             g.setColor(Color.BLACK);
@@ -111,8 +132,10 @@ public class Game extends JPanel {
         Graphics2D text = (Graphics2D) g;
         text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
-        text.drawString("Time Alive: "+ Double.toString(getTimeAlive()/1000), 10, 30);
-        text.drawString("HP: "+ playerHP, 10, 50);
+        text.setFont(new Font("Papyrus", Font.BOLD, 20));
+        text.drawString("Time Alive: "+ Double.toString(getTimeAlive()/1000), 10, 20);
+        text.drawString("HP: "+ playerHP, 380, 20);
+        text.drawString("Damage: "+playerMinDamage+"-"+playerMaxDamage, 660, 20);
 
     }
     
@@ -134,6 +157,7 @@ public class Game extends JPanel {
             int tempY = (int) (Math.random() * yframe);
             enemyXLocations[a] = roundEnemyLocation(tempX);
             enemyYLocations[a] = roundEnemyLocation(tempY);
+            enemyHP[a] = 10;
         }
     }
    
@@ -234,9 +258,16 @@ public class Game extends JPanel {
             }
             for (int a = 0; a < numEnemies; a++){
                 if (collisionDetect(x, y, enemyXLocations[a], enemyYLocations[a])){
-                    playerHP -= 10;
-                    if (playerHP == 0) {
+                    playerHP -= Math.round(Math.random() * 10);
+                    enemyHP[a] -= Math.round(Math.random() * playerMaxDamage);
+                    if (playerHP <= 0) {
                         System.exit(1);
+                    }
+                    if (enemyHP[a] <= 0) {
+                        enemyXLocations[a] = -enemySize;
+                        enemyYLocations[a] = -enemySize;
+                        playerMaxDamage++;
+                        playerHP += Math.round(Math.random() * 20);
                     }
                     switch(lastDir){
                         case 1: //up
