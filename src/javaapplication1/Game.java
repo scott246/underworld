@@ -5,7 +5,6 @@
  */
 package javaapplication1;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
 import java.awt.Graphics;
@@ -21,11 +20,13 @@ import javax.swing.JPanel;
 
 @SuppressWarnings("serial")
 public class Game extends JPanel {
+    static long startTime;
     static int playerSize = 20;
     static int enemySize = 20;
     static int rockSize = 20;
-    static int numEnemies = (int) (Math.random() * 20);
-    static int numRocks = (int) (Math.random() * 500);
+    static int playerHP = 100;
+    static final int numEnemies = (int) (Math.random() * 20);
+    static final int numRocks = (int) (Math.random() * 500);
     static int[] enemyXLocations = new int[numEnemies];
     static int[] enemyYLocations = new int[numEnemies];
     static int[] rockXLocations = new int[numRocks];
@@ -50,7 +51,9 @@ public class Game extends JPanel {
     }
     @Override
     public void paint(Graphics g) {
-        super.paint(g);
+        super.paint(g);        
+        g.setColor(Color.BLACK);
+        g.fillRect(5, 10, 110, 55);
         g.setColor(Color.BLUE);
         Graphics2D player = (Graphics2D) g;
         player.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -64,13 +67,19 @@ public class Game extends JPanel {
             enemy.fillRect(enemyXLocations[a], enemyYLocations[a], enemySize, enemySize);
         }
         for(int a = 0; a < numRocks; a++){
-            g.setColor(Color.BLACK);
+            g.setColor(Color.DARK_GRAY);
             Graphics2D rock = (Graphics2D) g;
             rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
             rock.fillRect(rockXLocations[a], rockYLocations[a], rockSize, rockSize);
         }
-        
+        g.setColor(Color.WHITE);
+        Graphics2D text = (Graphics2D) g;
+        text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+        text.drawString("Time Alive: "+ Double.toString(getTimeAlive()/1000), 10, 30);
+        text.drawString("HP: "+ playerHP, 10, 50);
+
     }
     
     public static int roundEnemyLocation(int n) {
@@ -79,6 +88,10 @@ public class Game extends JPanel {
     
     public static int roundRockLocation(int n) {
         return (n + rockSize-1) / rockSize * rockSize;
+    }
+    
+    public static double getTimeAlive(){
+        return System.currentTimeMillis() - startTime;
     }
     
     public static void generateEnemies() {
@@ -127,7 +140,7 @@ public class Game extends JPanel {
     }
 
     public static void main(String[] args) throws InterruptedException {
-
+        startTime = System.currentTimeMillis();
         JFrame frame = new JFrame("Game"); 
         
         frame.addKeyListener(new KeyListener() {
@@ -186,7 +199,26 @@ public class Game extends JPanel {
             }
             for (int a = 0; a < numEnemies; a++){
                 if (collisionDetect(x, y, enemyXLocations[a], enemyYLocations[a])){
-                    System.exit(1);
+                    playerHP -= 10;
+                    if (playerHP == 0) {
+                        System.exit(1);
+                    }
+                    switch(lastDir){
+                        case 1: //up
+                            y += playerSize;
+                            break;
+                        case 2: //left
+                            x += playerSize;
+                            break;
+                        case 3: //down
+                            y -= playerSize;
+                            break;
+                        case 4: //right
+                            x -= playerSize;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             for (int a = 0; a < numRocks; a++){
