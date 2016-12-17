@@ -22,21 +22,15 @@ import javax.swing.JPanel;
  * @author Nathan
  */
 
-enum powerups {
-    GOLD, MINATTACK, MAXATTACK, MANA, HEALTH
-};
-
 @SuppressWarnings("serial")
 public class Game extends JPanel {
     static long startTime;
-    static int powerupSize = 20;
     static int ENEMIES = (int) Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
     static int ROCKS = (int)1000;
     static Rock[] rockList = new Rock[ROCKS];
-    static final int numPowerups = (int) 20;
-    static int[] powerupX = new int[numPowerups];
-    static int[] powerupY = new int[numPowerups];
+    static int POWERUPS = (int)20;
+    static Powerup[] powerupList = new Powerup[POWERUPS];
     static int xframe = 805;
     static int yframe = 595;
  
@@ -52,8 +46,8 @@ public class Game extends JPanel {
     public void paint(Graphics g) {
         super.paint(g);        
         g.drawImage(background, 0, 0, this);
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, 800, 40);
+//        g.setColor(Color.BLACK);
+//        g.fillRect(0, 0, 800, 40);
         g.setColor(Color.BLUE);
         Graphics2D player1 = (Graphics2D) g;
         player1.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -70,12 +64,14 @@ public class Game extends JPanel {
                 g.setColor(Color.BLACK);
                 enemy.drawString(Integer.toString(enemyList[a].getHP()), enemyList[a].getX(), enemyList[a].getY()+enemyList[a].getSize()/2);
         }
-        for(int a = 0; a < numPowerups; a++) {
+        for(int a = 0; a < POWERUPS; a++) {
             g.setColor(Color.YELLOW);
             Graphics2D powerup = (Graphics2D) g;
             powerup.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            powerup.fillRect(powerupX[a], powerupY[a], powerupSize, powerupSize);
+            powerup.fillRect(powerupList[a].getX(), powerupList[a].getY(), powerupList[a].getSize(), powerupList[a].getSize());
+            g.setColor(Color.BLACK);
+            powerup.drawString(powerupList[a].getTypeString(), powerupList[a].getX(), powerupList[a].getY()+Powerup.size/2);
         }
         for(int a = 0; a < ROCKS; a++){
             g.setColor(Color.BLACK);
@@ -88,10 +84,19 @@ public class Game extends JPanel {
         Graphics2D text = (Graphics2D) g;
         text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
-        text.setFont(new Font("Papyrus", Font.BOLD, 20));
-        text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 20);
-        text.drawString("HP: "+ Player.hp, 380, 20);
-        text.drawString("Damage: "+Player.minDamage+"-"+Player.maxDamage, 660, 20);
+        text.setFont(new Font("Courier New", Font.BOLD, 16));
+        text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 15);
+        g.setColor(Color.YELLOW);
+        text.drawString("Gold: "+Player.gp, 10, 30);
+        g.setColor(Color.RED);
+        text.setFont(new Font("Courier New", Font.BOLD, 32));
+        text.drawString("HP: "+ Player.hp, 340, 30);
+        text.setFont(new Font("Courier New", Font.BOLD, 16));
+        g.setColor(Color.WHITE);
+        text.drawString("Damage: "+Player.minDamage+"-"+Player.maxDamage, 660, 15);
+        g.setColor(Color.BLUE);
+        text.drawString("Mana: "+Player.mana, 660, 30);
+        
 
     }
     
@@ -100,10 +105,10 @@ public class Game extends JPanel {
         return (n + size-1) / size * size;
     }
     
-    //makes the map and border
+    //makes the map, border, and powerups
     public static void generateMap() {
         int densityMultiplier = 6;
-        double powerupFrequency = .01;
+        double powerupFrequency = .03;
         int power = (int)(Math.random() * densityMultiplier);
         int rockCount = 0;
         int powerupCount = 0;
@@ -122,11 +127,16 @@ public class Game extends JPanel {
                             return;
                         }
                     }
+                    //generate powerups
                     if (Math.random() < powerupFrequency) {
-                        if (powerupCount <= numPowerups-1) {
-                            powerupX[powerupCount] = roundLocation(a, Rock.size);
-                            powerupY[powerupCount] = roundLocation(b, Rock.size);
-                            powerupCount++;
+                        if (powerupCount <= POWERUPS-1) {
+                            powerupList[powerupCount] = new Powerup();
+                            powerupList[powerupCount].setX(roundLocation(a, Powerup.size));
+                            powerupList[powerupCount].setY(roundLocation(b, Powerup.size));
+                            powerupList[powerupCount].setType(Math.random());
+                            if (powerupCount++ >= POWERUPS-1) {
+                                powerupCount--;
+                            }
                         }
                     }
                     b += 20;
@@ -145,6 +155,7 @@ public class Game extends JPanel {
             }
         }
         ROCKS = rockCount;
+        POWERUPS = powerupCount;
     }
     
     //used to calculate time alive for HUD
@@ -198,6 +209,25 @@ public class Game extends JPanel {
             }
         }
     }
+    
+    public static void knockback(int lastDir, int size, int x, int y) {
+        switch(lastDir){
+            case 1: //up
+                y += size;
+                break;
+            case 2: //left
+                x += size;
+                break;
+            case 3: //down
+                y -= size;
+                break;
+            case 4: //right
+                x -= size;
+                break;
+            default:
+                break;
+        }
+    }
 
     public static void main(String[] args) throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
@@ -241,7 +271,7 @@ public class Game extends JPanel {
         generateEnemies();
         generateMap();
         int aiTimer = 0;
-        double enemyFPS = 1;
+        double enemyFPS = 2;
         int gameFPS = 60;
         Game game = new Game();
         frame.add(game);
@@ -250,11 +280,13 @@ public class Game extends JPanel {
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        //game loop
         while (true) {
             if (aiTimer == (int)(100/enemyFPS)) {
                 aiTimer = 0;
                 initAI();
             }
+            //player collides with enemy
             for (int a = 0; a < ENEMIES; a++){
                 if (collisionDetect(Player.x, Player.y, enemyList[a].getX(), enemyList[a].getY())){
                     Player.hp -= Math.round(Math.random() * enemyList[a].getHP());
@@ -285,6 +317,34 @@ public class Game extends JPanel {
                     }
                 }
             }
+            //player collides with powerup
+            for (int a = 0; a < POWERUPS; a++) {
+                if (collisionDetect(Player.x, Player.y, powerupList[a].getX(), powerupList[a].getY())) {
+                    powerupList[a].setX(-Powerup.size);
+                    powerupList[a].setY(-Powerup.size);
+                    switch(powerupList[a].getType()) {
+                        case GOLD:
+                            Player.gp += (int) (Math.random() * 10);
+                            break;
+                        case HEALTH:
+                            Player.hp += (int) (Math.random() * 100);
+                            break;
+                        case MINATTACK:
+                            Player.minDamage += (int) (Math.random() * 10);
+                            if (Player.minDamage > Player.maxDamage){
+                                Player.maxDamage = Player.minDamage;
+                            }
+                            break;
+                        case MAXATTACK:
+                            Player.maxDamage += (int) (Math.random() * 10);
+                            break;
+                        case MANA:
+                            Player.mana += (int) (Math.random() * 10);
+                            break;
+                    }
+                }
+            }
+            //player collides with rock
             for (int a = 0; a < ROCKS; a++){
                 if (collisionDetect(Player.x, Player.y, rockList[a].getX(), rockList[a].getY())){
                     switch(Player.lastDir){
@@ -304,6 +364,7 @@ public class Game extends JPanel {
                             break;
                     }
                 }
+                //enemy collides with rock
                 for (int b = 0; b < ENEMIES; b++) {
                     if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), rockList[a].getX(), rockList[a].getY())){
                         switch(enemyList[b].getLastDir()){

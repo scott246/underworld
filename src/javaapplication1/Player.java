@@ -16,10 +16,12 @@ public class Player {
     static int size = 20;
     static int hp = 100;
     static int minDamage = 1;
-    static int maxDamage = 2;
+    static int maxDamage = 5;
     static int x = 400;
     static int y = 300;
     static int lastDir = 0;
+    static int gp = 0;
+    static int mana = 0;
     
     public static void movePlayerLeft() {
         if (x > 0) x -= size;
