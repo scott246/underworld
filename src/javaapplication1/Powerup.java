@@ -45,16 +45,16 @@ public class Powerup {
         return typeString;
     }
     public void setType(double temp){
-        if (temp < .2 && temp >= 0) {
+        if (temp < .3 && temp >= 0) {
             type = Powerups.GOLD;
             typeString = "G";
-        } else if (temp < .4 && temp >= .2) {
+        } else if (temp < .6 && temp >= .3) {
             type = Powerups.MANA;
             typeString = "M";
-        } else if (temp < .6 && temp >= .4) {
+        } else if (temp < .7 && temp >= .6) {
             type = Powerups.MINATTACK;
             typeString = "-";
-        } else if (temp < .8 && temp >= .6) {
+        } else if (temp < .8 && temp >= .7) {
             type = Powerups.MAXATTACK;
             typeString = "+";
         } else if (temp < 1 && temp >= .8) {
