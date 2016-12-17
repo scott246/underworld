@@ -29,67 +29,25 @@ enum powerups {
 @SuppressWarnings("serial")
 public class Game extends JPanel {
     static long startTime;
-    static int rockSize = 20;
     static int powerupSize = 20;
-    static final int ENEMIES = (int) Math.ceil(Math.random() * 50);
+    static int ENEMIES = (int) Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
-    static final int numPowerups = (int) 20;//Math.ceil(Math.random() * 20);
-    static final int numRocks = (int) 1000;//(Math.random() * 500);
+    static int ROCKS = (int)1000;
+    static Rock[] rockList = new Rock[ROCKS];
+    static final int numPowerups = (int) 20;
     static int[] powerupX = new int[numPowerups];
     static int[] powerupY = new int[numPowerups];
-    static int[] rockXLocations = new int[numRocks];
-    static int[] rockYLocations = new int[numRocks];
     static int xframe = 805;
     static int yframe = 595;
-    
-    public static void generateMap() {
-        int densityMultiplier = 6;
-        double powerupFrequency = .01;
-        int power = (int)(Math.random() * densityMultiplier);
-        int rockCount = 0;
-        int powerupCount = 0;
-        for (int a = 0; a < xframe; a+=rockSize) {
-            for (int b = 0; b < yframe; b+=rockSize) {
-                while(power > 0) {
-                    //generate border
-                    if (a == 0 || b == rockSize ||
-                        b == 0 || 
-                        a == roundRockLocation(xframe)-rockSize * 2 || 
-                        b == roundRockLocation(yframe)-rockSize * 3) {
-                        rockXLocations[rockCount] = roundRockLocation(a);
-                        rockYLocations[rockCount] = roundRockLocation(b); 
-                        if (rockCount++ >= numRocks-1) {
-                            return;
-                        }
-                    }
-                    if (Math.random() < powerupFrequency) {
-                        if (powerupCount <= numPowerups-1) {
-                            powerupX[powerupCount] = roundRockLocation(a);
-                            powerupY[powerupCount] = roundRockLocation(b);
-                            powerupCount++;
-                        }
-                    }
-                    b += 20;
-                    power--;
-                }
-                if (a == Player.x && b == Player.y) { //rock would spawn on Player
-                    b += rockSize;
-                }
-                rockXLocations[rockCount] = roundRockLocation(a);
-                rockYLocations[rockCount] = roundRockLocation(b);
-                if (rockCount++ >= numRocks-1) {
-                    return;
-                }
-                power = (int)(Math.random() * densityMultiplier);
-            }
-        }
-    }
+ 
     
     final BufferedImage background;
 
     public Game() throws IOException {
         this.background = ImageIO.read(new File("C:\\Users\\Nathan\\Documents\\GitHub\\game\\src\\javaapplication1\\stone.jpg"));
     }
+    
+    //very basic graphics
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
@@ -119,12 +77,12 @@ public class Game extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
             powerup.fillRect(powerupX[a], powerupY[a], powerupSize, powerupSize);
         }
-        for(int a = 0; a < numRocks; a++){
+        for(int a = 0; a < ROCKS; a++){
             g.setColor(Color.BLACK);
             Graphics2D rock = (Graphics2D) g;
             rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            rock.fillRect(rockXLocations[a], rockYLocations[a], rockSize, rockSize);
+            rock.fillRect(rockList[a].getX(), rockList[a].getY(), rockList[a].getSize(), rockList[a].getSize());
         }
         g.setColor(Color.WHITE);
         Graphics2D text = (Graphics2D) g;
@@ -137,57 +95,106 @@ public class Game extends JPanel {
 
     }
     
-    public static int roundRockLocation(int n) {
-        return (n + rockSize-1) / rockSize * rockSize;
+    //helper function to enforce a grid layout
+    public static int roundLocation(int n, int size) {
+        return (n + size-1) / size * size;
     }
     
+    //makes the map and border
+    public static void generateMap() {
+        int densityMultiplier = 6;
+        double powerupFrequency = .01;
+        int power = (int)(Math.random() * densityMultiplier);
+        int rockCount = 0;
+        int powerupCount = 0;
+        for (int a = 0; a < xframe; a+=Rock.size) {
+            for (int b = 0; b < yframe; b+=Rock.size) {
+                while(power > 0) {
+                    //generate border
+                    if (a == 0 || b == Rock.size ||
+                        b == 0 || 
+                        a == roundLocation(xframe, Rock.size)-Rock.size * 2 || 
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 3) {
+                        rockList[rockCount] = new Rock();
+                        rockList[rockCount].setX(roundLocation(a, Rock.size));
+                        rockList[rockCount].setY(roundLocation(b, Rock.size)); 
+                        if (rockCount++ >= ROCKS-1) {
+                            return;
+                        }
+                    }
+                    if (Math.random() < powerupFrequency) {
+                        if (powerupCount <= numPowerups-1) {
+                            powerupX[powerupCount] = roundLocation(a, Rock.size);
+                            powerupY[powerupCount] = roundLocation(b, Rock.size);
+                            powerupCount++;
+                        }
+                    }
+                    b += 20;
+                    power--;
+                }
+                if (a == Player.x && b == Player.y) { //rock would spawn on Player
+                    b += Rock.size;
+                }
+                rockList[rockCount] = new Rock();
+                rockList[rockCount].setX(roundLocation(a, Rock.size));
+                rockList[rockCount].setY(roundLocation(b, Rock.size));
+                if (rockCount++ >= ROCKS-1) {
+                    return;
+                }
+                power = (int)(Math.random() * densityMultiplier);
+            }
+        }
+        ROCKS = rockCount;
+    }
+    
+    //used to calculate time alive for HUD
     public static double getTimeAlive(){
         return System.currentTimeMillis() - startTime;
     }
-  
-    public static int roundEnemyLocation(int n, int size) {
-        return (n + size-1) / size * size;
-    }
-        
+    
+    //makes bad guys
     public static void generateEnemies() {
         for (int a = 0; a < ENEMIES; a++){
             int tempX = (int) (Math.random() * xframe);
             int tempY = (int) (Math.random() * yframe);
             Enemy e = new Enemy();
             e.setHP((int)Math.ceil((Math.random() * e.getMaxHP())));
-            e.setX(roundEnemyLocation(tempX, e.getSize()));
-            e.setY(roundEnemyLocation(tempY, e.getSize()));
+            e.setX(roundLocation(tempX, e.getSize()));
+            e.setY(roundLocation(tempY, e.getSize()));
             e.setLastDir(1);
             enemyList[a] = e; 
         }
 
     }
     
+    //basic collision detection system
     public static boolean collisionDetect(int x1, int y1, int x2, int y2){
         return (x1 == x2 && y1 == y2);
     }
    
-    
+    //allows the bad guys to wander around
     public static void initAI(){
-        System.out.println("("+enemyList[0].getX()+","+enemyList[0].getY()+")");
- 
         for (int a = 0; a < ENEMIES; a++){
-            double temp = Math.random();
+            double temp = Math.random(); //uses a random number to calculate which way to go
+            //go left
             if (temp < .25 && enemyList[a].getX()-enemyList[a].getSize() >= 0) {
                 enemyList[a].setX(enemyList[a].getX()-enemyList[a].getSize());
-                enemyList[a].setLastDir(2);
+                enemyList[a].setLastDir(2); //left
             }
+            //go right
             else if (temp < .5 && temp >= .25 && enemyList[a].getX()+enemyList[a].getSize() < xframe) {
                 enemyList[a].setX(enemyList[a].getX()+enemyList[a].getSize());
-                enemyList[a].setLastDir(4);
+                enemyList[a].setLastDir(4); //right
             }
+            //go up
             if (temp < .75 && temp >= .5 && enemyList[a].getY()-enemyList[a].getSize() >= 0) {
                 enemyList[a].setY(enemyList[a].getY()-enemyList[a].getSize());
-                enemyList[a].setLastDir(1);
+                enemyList[a].setLastDir(1); //up
             }
+            //go down
             else if (temp < 1 && temp >= .75 && enemyList[a].getY()+enemyList[a].getSize() < yframe) {
                 enemyList[a].setY(enemyList[a].getY()+enemyList[a].getSize());
-                enemyList[a].setLastDir(3);
+                enemyList[a].setLastDir(3); //down
             }
         }
     }
@@ -203,11 +210,6 @@ public class Game extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                System.out.println("Key pressed code=" + e.getKeyCode() + ", char=" + e.getKeyChar());
-                System.out.println("Current location (x:"+Player.x+", y:"+Player.y+")");
-                System.out.println("Enemies: "+ENEMIES);
-                System.out.println("++++++ENEMY 0 LOCATION ("+enemyList[0].getX()+","+enemyList[0].getY()+")");
-                System.out.println("++++++ENEMY 1 LOCATION ("+enemyList[1].getX()+","+enemyList[1].getY()+")");
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_W:
                         Player.lastDir = 1;
@@ -225,10 +227,11 @@ public class Game extends JPanel {
                         Player.lastDir = 4;
                         Player.movePlayerRight();
                         break;
+                    case KeyEvent.VK_ESCAPE:
+                        System.exit(1);
                     default:
                         break;
                 }
-                System.out.println("New location (x:"+Player.x+", y:"+Player.y+")");
             }
 
             @Override
@@ -282,8 +285,8 @@ public class Game extends JPanel {
                     }
                 }
             }
-            for (int a = 0; a < numRocks; a++){
-                if (collisionDetect(Player.x, Player.y, rockXLocations[a], rockYLocations[a])){
+            for (int a = 0; a < ROCKS; a++){
+                if (collisionDetect(Player.x, Player.y, rockList[a].getX(), rockList[a].getY())){
                     switch(Player.lastDir){
                         case 1: //up
                             Player.y += Player.size;
@@ -302,7 +305,7 @@ public class Game extends JPanel {
                     }
                 }
                 for (int b = 0; b < ENEMIES; b++) {
-                    if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), rockXLocations[a], rockYLocations[a])){
+                    if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), rockList[a].getX(), rockList[a].getY())){
                         switch(enemyList[b].getLastDir()){
                             case 1: //up
                                 enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
