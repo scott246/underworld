@@ -33,6 +33,7 @@ public class Game extends JPanel {
     static Powerup[] powerupList = new Powerup[POWERUPS];
     static int xframe = 805;
     static int yframe = 595;
+    static int level = 0;
  
     
     final BufferedImage background;
@@ -88,8 +89,11 @@ public class Game extends JPanel {
         text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 15);
         g.setColor(Color.YELLOW);
         text.drawString("Gold: "+Player.gp, 10, 30);
+        g.setColor(Color.WHITE);
+        text.setFont(new Font("Courier New", Font.BOLD, 16));
+        text.drawString("Level: "+ level, 340, 15);
         g.setColor(Color.RED);
-        text.setFont(new Font("Courier New", Font.BOLD, 32));
+        text.setFont(new Font("Courier New", Font.BOLD, 16));
         text.drawString("HP: "+ Player.hp, 340, 30);
         text.setFont(new Font("Courier New", Font.BOLD, 16));
         g.setColor(Color.WHITE);
@@ -118,8 +122,10 @@ public class Game extends JPanel {
                     //generate border
                     if (a == 0 || b == Rock.size ||
                         b == 0 || 
-                        a == roundLocation(xframe, Rock.size)-Rock.size * 2 || 
-                        b == roundLocation(yframe, Rock.size)-Rock.size * 3) {
+                        a == roundLocation(xframe, Rock.size)-Rock.size * 2 ||
+                        a == roundLocation(xframe, Rock.size) ||
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
+                        b == roundLocation(yframe, Rock.size)) {
                         rockList[rockCount] = new Rock();
                         rockList[rockCount].setX(roundLocation(a, Rock.size));
                         rockList[rockCount].setY(roundLocation(b, Rock.size)); 
@@ -165,11 +171,11 @@ public class Game extends JPanel {
     
     //makes bad guys
     public static void generateEnemies() {
-        for (int a = 0; a < ENEMIES; a++){
-            int tempX = (int) (Math.random() * xframe);
-            int tempY = (int) (Math.random() * yframe);
+        for (int a = 0; a < ENEMIES; a++){            
             Enemy e = new Enemy();
-            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP())));
+            int tempX = (int) (Math.random() * xframe - e.getSize() * 2);
+            int tempY = (int) (Math.random() * yframe - e.getSize() * 3);
+            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level + 1))));
             e.setX(roundLocation(tempX, e.getSize()));
             e.setY(roundLocation(tempY, e.getSize()));
             e.setLastDir(1);
@@ -228,6 +234,15 @@ public class Game extends JPanel {
                 break;
         }
     }
+    
+    public static void nextLevel(Game g, JFrame f) throws IOException {
+        f.add(g);
+        f.setSize(xframe, yframe);
+        f.setResizable(false);
+        f.setVisible(true);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        level++;
+    }
 
     public static void main(String[] args) throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
@@ -274,14 +289,25 @@ public class Game extends JPanel {
         double enemyFPS = 2;
         int gameFPS = 60;
         Game game = new Game();
-        frame.add(game);
-        frame.setSize(xframe, yframe);
-        frame.setResizable(false);
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        nextLevel(game, frame);
 
         //game loop
         while (true) {
+            int deadEnemies = 0;
+            for (int a = 0; a < ENEMIES; a++) {
+                if (enemyList[a].getX() < 0 || 
+                    enemyList[a].getY() < 0 ||
+                    enemyList[a].getX() > xframe ||
+                    enemyList[a].getY() > yframe) deadEnemies++;
+            }
+            if (ENEMIES == deadEnemies) {
+                frame.remove(frame);
+                Game g = new Game();
+                nextLevel(g, frame); 
+                generateEnemies();
+                generateMap();
+            }
+            
             if (aiTimer == (int)(100/enemyFPS)) {
                 aiTimer = 0;
                 initAI();
@@ -386,7 +412,7 @@ public class Game extends JPanel {
                     }
                 }
             }
-            game.repaint();
+            frame.repaint();
             Thread.sleep(1000/gameFPS);
             aiTimer++;
         }
