@@ -11,10 +11,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
-import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,11 +38,9 @@ public class Game extends JPanel {
     static private AtomicBoolean paused;
     static private AtomicBoolean gameOver;
     static private Thread thread;
-    
-    final BufferedImage background;
+    static boolean instructionDisplay = false;
 
     public Game() throws IOException {
-        this.background = ImageIO.read(new File("C:\\Users\\Nathan\\Documents\\GitHub\\game\\src\\javaapplication1\\stone.jpg"));
         paused = new AtomicBoolean(false);
         gameOver = new AtomicBoolean(false);
     }
@@ -54,7 +49,11 @@ public class Game extends JPanel {
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
-        g.drawImage(background, 0, 0, this);
+        g.setColor(Color.GRAY);
+        Graphics2D background = (Graphics2D) g;
+        background.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+        background.fillRect(0, 0, xframe, yframe);
         g.setColor(Color.BLUE);
         Graphics2D player1 = (Graphics2D) g;
         player1.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -126,7 +125,7 @@ public class Game extends JPanel {
             int texty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
             text.drawString(text1, textx, texty);
         }
-        g.setColor(Color.LIGHT_GRAY);
+        g.setColor(Color.WHITE);
         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
             text.drawString("==STORE==", 10, 60);
             text.drawString("[1] Buy +1 HP: "+Store.hpPrice+" Gold", 10, 80);
@@ -136,9 +135,27 @@ public class Game extends JPanel {
             text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
             text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
         }
-            
-        
-
+        String instructions = null;
+        if (instructionDisplay) {
+            instructions = "[wasd] - move"+"\n"
+                    + "[1-6] (in store) - buy"+"\n"
+                    + "[i] - toggle instructions"+"\n"
+                    + "[j] - use attack magic"+"\n"
+                    + "[k] - use defense magic"+"\n"
+                    + "[esc] - pause"+"\n"
+                    + "Red block = enemy, attack by bumping into them (both of you will take random damage)"+"\n"
+                    + "Blue circle = you"+"\n"
+                    + "Blue block = store"+"\n"
+                    + "Yellow block = powerup which increases various stats"+"\n";
+            int y = yframe - text.getFontMetrics().getHeight() * 12;
+            for (String line : instructions.split("\n")) {
+                text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
+            }
+        }
+        else if (!instructionDisplay) {
+            instructions = "Press [i] to display instructions";
+            text.drawString(instructions, 10, yframe - text.getFontMetrics().getHeight() * 2);
+        }
     }
     
     //helper function to enforce a grid layout
@@ -200,13 +217,13 @@ public class Game extends JPanel {
         ROCKS = rockCount;
         POWERUPS = powerupCount;
         //generate store
-        int storex = (roundLocation((int)(Math.random() * xframe - store.size * 2), store.size));
-        int storey = (roundLocation((int)(Math.random() * yframe - store.size * 3), store.size));
-        for (int a = 0; a < ROCKS; a++) {
-            if (storex == rockList[a].getX() && storey == rockList[a].getY()){
-                storex += store.size; storey += store.size;
-            }
-        }
+        int storex = Player.x;//(roundLocation((int)(Math.random() * xframe - store.size * 2), store.size));
+        int storey = Player.y;//(roundLocation((int)(Math.random() * yframe - store.size * 3), store.size));
+//        for (int a = 0; a < ROCKS; a++) {
+//            if (storex == rockList[a].getX() && storey == rockList[a].getY()){
+//                storex += store.size; storey += store.size;
+//            }
+//        }
         store.setX(storex);
         store.setY(storey);
     }
@@ -307,20 +324,41 @@ public class Game extends JPanel {
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_W:
-                        Player.lastDir = 1;
-                        Player.movePlayerUp();
+                        if (!paused.get()) {
+                            Player.lastDir = 1;
+                            Player.movePlayerUp();
+                        }
                         break;
                     case KeyEvent.VK_A:
-                        Player.lastDir = 2;
-                        Player.movePlayerLeft();
+                        if (!paused.get()) {
+                            Player.lastDir = 2;
+                            Player.movePlayerLeft();
+                        }
                         break;
                     case KeyEvent.VK_S:
-                        Player.lastDir = 3;
-                        Player.movePlayerDown();
+                        if (!paused.get()) {
+                            Player.lastDir = 3;
+                            Player.movePlayerDown();
+                        }
                         break;
                     case KeyEvent.VK_D:
-                        Player.lastDir = 4;
-                        Player.movePlayerRight();
+                        if (!paused.get()) {
+                            Player.lastDir = 4;
+                            Player.movePlayerRight();
+                        }
+                        break;
+                    case KeyEvent.VK_I:
+                        if (!paused.get()){
+                            paused.set(true);
+                        }
+                        else {
+                            paused.set(false);
+                            synchronized(thread){
+                               thread.notify(); 
+                            }
+                        }
+                        if (!instructionDisplay) instructionDisplay = true;
+                        else if (instructionDisplay) instructionDisplay = false;
                         break;
                     case KeyEvent.VK_1: //buy 1 hp if in store
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
@@ -342,7 +380,7 @@ public class Game extends JPanel {
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.minDamagePrice) {
                                 Player.gp -= Store.minDamagePrice;
-                                Player.minDamage += 1;
+                                if (Player.minDamage++ > Player.maxDamage) Player.maxDamage++;
                             }
                         }
                         break;
