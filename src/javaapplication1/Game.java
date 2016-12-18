@@ -169,39 +169,74 @@ public class Game extends JPanel {
             text.drawString(text1, ptextx, ptexty);
         }
         //store screen
-        g.setColor(Color.WHITE);
-        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-            text.drawString("==STORE==", 10, 60);
-            text.drawString("[1] Buy +1 HP: "+Store.hpPrice+" Gold", 10, 80);
-            text.drawString("[2] Buy +1 Mana: "+Store.manaPrice+" Gold", 10, 100);
-            text.drawString("[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold", 10, 120);
-            text.drawString("[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold", 10, 140);
-            text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
-            text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
+        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {        
+            text.setFont(new Font("Courier New", Font.BOLD, 14));
+            g.setColor(Color.WHITE);
+            String storeMenu = "==STORE==\n"
+                    + "[1] Buy +1 HP: "+Store.hpPrice+" Gold\n"
+                    + "[2] Buy +1 Mana: "+Store.manaPrice+" Gold\n"
+                    + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold\n"
+                    + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold\n"
+                    + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold\n"
+                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold\n";
+            int xtextx = xframe/2;
+            int ytexty = yframe/2 + text.getFontMetrics().getHeight();
+            for (String line : storeMenu.split("\n")) {
+                text.drawString(line, xtextx, ytexty+=text.getFontMetrics().getHeight());
+            }
+//            text.drawString("==STORE==", 10, 60);
+//            text.drawString("[1] Buy +1 HP: "+Store.hpPrice+" Gold", 10, 80);
+//            text.drawString("[2] Buy +1 Mana: "+Store.manaPrice+" Gold", 10, 100);
+//            text.drawString("[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold", 10, 120);
+//            text.drawString("[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold", 10, 140);
+//            text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
+//            text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
         }
         //instructions screen
         String instructions = null;
         if (instructionDisplay) {
-            instructions = "[wasd] - move"+"\n"
-                    + "[1-6] (in store) - buy"+"\n"
-                    + "[i] - toggle instructions"+"\n"
-                    + "[j] - use attack magic"+"\n"
-                    + "[k] - use defense magic"+"\n"
-                    + "[esc] - pause"+"\n"
-                    + "Red block = enemy"+"\n"
-                    + "(attack by bumping into them; both of you will take random damage)"+"\n"
-                    + "Blue circle = you"+"\n"
-                    + "Green block = store"+"\n"
-                    + "(purchase items that increase your stats)"+"\n"
-                    + "Yellow block = powerup which increases various stats"+"\n"
-                    + "(increases your stats based on player level)"+"\n"
-                    + "(M=mana, H=health, -=minimum attack, +=maximum attack, G=gold)";
-            int y = yframe - text.getFontMetrics().getHeight() * 16;
+            g.setColor(Color.DARK_GRAY);
+            text.setFont(new Font("Courier New", Font.BOLD, 14));
+            text.fillRect(0, Rock.size * 2, xframe, yframe);
+            g.setColor(Color.WHITE);
+            instructions = "==INSTRUCTIONS==\n"
+                    + "[wasd]  move\n"
+                    + "[1-6]   buy item (while in the store)\n"
+                    + "[i]     toggle instructions\n"
+                    + "        don't worry, the game is paused\n"
+                    + "[j]     use attack magic\n"
+                    + "        every enemy in a 3 block radius takes your max damage\n"
+                    + "        requires 20 mana to use\n"
+                    + "[k]     use defense magic\n"
+                    + "        increases your health by (30*your_level)\n"
+                    + "        requires 10 mana to use\n"
+                    + "[esc]   pause\n"
+                    + "\n"
+                    + "==ENTITIES==\n"
+                    + "Red     enemy\n"
+                    + "        attack by bumping into them\n"
+                    + "        both will take a random amount damage based on level and enemy's health\n"
+                    + "Blue    your player model\n"
+                    + "Green   store\n"
+                    + "        purchase items that increase your stats\n"
+                    + "        enemies can't attack you while you're in the store\n"
+                    + "Yellow  powerup which increases various stats\n"
+                    + "        increases stats based on player level\n"
+                    + "        M = mana, H = health, - = minimum attack, + = maximum attack, G = gold\n"
+                    + "\n"
+                    + "==GAMEPLAY==\n"
+                    + "Navigate through the dungeon, kill all the enemies to get to the next level,\n"
+                    + "get through as many levels as possible before you inevitably die.";
+            int y = Rock.size + text.getFontMetrics().getHeight() * 2;
             for (String line : instructions.split("\n")) {
                 text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
             }
+            String returntext = "==PRESS [i] TO RETURN TO THE GAME==";
+            text.drawString(returntext, (xframe - text.getFontMetrics().stringWidth(returntext))/2, y+=text.getFontMetrics().getHeight());
         }
+        
         else if (!instructionDisplay) {
+            text.setFont(new Font("Courier New", Font.BOLD, 16));
             instructions = "Press [i] to display instructions";
             text.drawString(instructions, 10, yframe - text.getFontMetrics().getHeight() * 2);
         }
