@@ -22,6 +22,8 @@ public class Player {
     static int lastDir = 0;
     static int gp = 0;
     static int mana = 0;
+    static int attackMagic = 0;
+    static int defenseMagic = 0;
     
     public static void movePlayerLeft() {
         if (x > 0) x -= size;

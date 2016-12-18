@@ -126,6 +126,16 @@ public class Game extends JPanel {
             int texty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
             text.drawString(text1, textx, texty);
         }
+        g.setColor(Color.LIGHT_GRAY);
+        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+            text.drawString("==STORE==", 10, 60);
+            text.drawString("[1] Buy +1 HP: "+Store.hpPrice+" Gold", 10, 80);
+            text.drawString("[2] Buy +1 Mana: "+Store.manaPrice+" Gold", 10, 100);
+            text.drawString("[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold", 10, 120);
+            text.drawString("[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold", 10, 140);
+            text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
+            text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
+        }
             
         
 
@@ -312,6 +322,54 @@ public class Game extends JPanel {
                         Player.lastDir = 4;
                         Player.movePlayerRight();
                         break;
+                    case KeyEvent.VK_1: //buy 1 hp if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.hpPrice) {
+                                Player.gp -= Store.hpPrice;
+                                Player.hp += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_2: //buy 1 mana if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.manaPrice) {
+                                Player.gp -= Store.manaPrice;
+                                Player.mana += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_3: //buy 1 mindamage if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.minDamagePrice) {
+                                Player.gp -= Store.minDamagePrice;
+                                Player.minDamage += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_4: //buy 1 maxdamage if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.maxDamagePrice) {
+                                Player.gp -= Store.maxDamagePrice;
+                                Player.maxDamage += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_5: //buy 1 attackmagic if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.attackMagicPrice) {
+                                Player.gp -= Store.attackMagicPrice;
+                                Player.attackMagic += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_6: //buy 1 defensemagic if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.defenseMagicPrice) {
+                                Player.gp -= Store.defenseMagicPrice;
+                                Player.defenseMagic += 1;
+                            }
+                        }
+                        break;
                     case KeyEvent.VK_ESCAPE:
                         if (!paused.get()){
                             paused.set(true);
@@ -441,7 +499,6 @@ public class Game extends JPanel {
                 //player collides with store
                 if (collisionDetect(Player.x, Player.y, store.x, store.y)) {
                     //TODO: find a way to make a store window
-                    
                 }
                 //player collides with rock
                 for (int a = 0; a < ROCKS; a++){

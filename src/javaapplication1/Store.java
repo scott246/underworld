@@ -12,12 +12,12 @@ import static javaapplication1.Game.level;
  * @author Nathan
  */
 public class Store {
-    int manaPrice = 10 * level;
-    int hpPrice = 1 * level;
-    int minDamagePrice = 25 * level;
-    int maxDamagePrice = 20 * level;
-    int attackMagicPrice = 30 * level;
-    int defenseMagicPrice = 30 * level;
+    static int manaPrice = 1 * (level + 1);
+    static int hpPrice = 1 * (level + 1);
+    static int minDamagePrice = 12 * (level + 1);
+    static int maxDamagePrice = 10 * (level + 1);
+    static int attackMagicPrice = 20 * (level + 1);
+    static int defenseMagicPrice = 20 * (level + 1);
     static int x = 0;
     static int y = 0;
     static int size = 20;
