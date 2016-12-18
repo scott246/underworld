@@ -14,9 +14,9 @@ import static javaapplication1.Game.yframe;
  */
 public class Player {
     static int size = 20;
-    static int hp = 10;
+    static int hp = 20;
     static int minDamage = 1;
-    static int maxDamage = 5;
+    static int maxDamage = 7;
     static int x = 400;
     static int y = 300;
     static int lastDir = 0;
@@ -36,5 +36,18 @@ public class Player {
     }
     public static void movePlayerDown() {
         if (y < yframe - size * 3) y += size;
+    }
+    public static void resetPlayer() {
+        size = 20;
+        hp = 20;
+        minDamage = 1;
+        maxDamage = 7;
+        x = 400;
+        y = 300;
+        lastDir = 0;
+        gp = 0;
+        mana = 0;
+        attackMagic = 0;
+        defenseMagic = 0;
     }
 }

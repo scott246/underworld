@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.*;
 /**
  *
  * @author Nathan
@@ -40,10 +41,91 @@ public class Game extends JPanel {
     static private Thread thread;
     static boolean instructionDisplay = false;
     static int enemiesKilled = 0;
+    static int gameID = 1;
+    static int highScore = 0;
 
     public Game() throws IOException {
         paused = new AtomicBoolean(false);
         gameOver = new AtomicBoolean(false);
+    }
+    
+    public static void connect() {
+        Connection conn = null;
+        try {
+            // db parameters
+            String url = "jdbc:sqlite:game.db";
+            // create a connection to the database
+            conn = DriverManager.getConnection(url);
+            
+            System.out.println("Connection to SQLite has been established.");
+                     
+                String q = "DROP TABLE IF EXISTS highscores;";
+                try (Statement st = conn.createStatement()) {
+                    st.executeUpdate(q);
+                }
+            
+            String u = "CREATE TABLE highscores "
+                + "(id INTEGER, "
+                + "enemiesKilled INTEGER);";
+            try (Statement st = conn.createStatement()) {
+                st.executeUpdate(u);
+            }
+            
+            initDB();
+            
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+    }
+    
+    public static void initDB(){
+        Connection conn = null;
+        try {
+            // db parameters
+            String url = "jdbc:sqlite:game.db";
+            // create a connection to the database
+            conn = DriverManager.getConnection(url);
+            String u = "INSERT INTO highscores "
+                    + "(id, enemiesKilled) "
+                    + "VALUES ("+gameID+","+enemiesKilled+");";
+            Statement st = conn.createStatement();
+            st.executeUpdate(u);
+            conn.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    
+    public static int getHighScore(){
+        Connection conn = null;
+        try {
+            // db parameters
+            String url = "jdbc:sqlite:game.db";
+            // create a connection to the database
+            conn = DriverManager.getConnection(url);
+            String q = "SELECT max(enemiesKilled) AS \"maxkills\" "
+                    + "FROM highscores;";
+            Statement st = conn.createStatement();
+            ResultSet rs = st.executeQuery(q);
+            int max = 0;
+            if (rs.next()){
+                max = rs.getInt(1);
+            }
+            conn.close();
+            return max;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return 0;
+        }
     }
     
     //very basic graphics
@@ -178,9 +260,17 @@ public class Game extends JPanel {
         if (gameOver.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "GAME OVER";
+            String text2 = "==PRESS [r] TO RESTART==";
+            String text3 = "High Score: "+ highScore;
             int ptextx = (xframe - metrics.stringWidth(text1))/2;
+            int ptextx2 = (xframe - metrics.stringWidth(text2))/2;
+            int ptextx3 = (xframe - metrics.stringWidth(text3))/2;
             int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
+            int ptexty2 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
+            int ptexty3 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
             text.drawString(text1, ptextx, ptexty);
+            text.drawString(text2, ptextx2, ptexty2);
+            text.drawString(text3, ptextx3, ptexty3);
         }
         //store screen
         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {        
@@ -218,6 +308,7 @@ public class Game extends JPanel {
                     + "        increases your health by (30*your_level)\n"
                     + "        requires 10 mana to use\n"
                     + "[esc]   pause\n"
+                    + "[r]     restart game\n"
                     + "\n"
                     + "==ENTITIES==\n"
                     + "Red     enemy\n"
@@ -294,7 +385,7 @@ public class Game extends JPanel {
                     power--;
                 }
                 if (a == Player.x && b == Player.y) { //rock would spawn on Player
-                    b += Rock.size;
+                    b += Rock.size * 2;
                 }
                 rockList[rockCount] = new Rock();
                 rockList[rockCount].setX(roundLocation(a, Rock.size));
@@ -332,13 +423,13 @@ public class Game extends JPanel {
             int tempY = (int) (Math.random() * yframe - e.getSize() * 4);
             //ensure enemies don't spawn on player
             if (tempX == Player.x && tempY == Player.y) {
-                tempX += e.getSize() * 3;
+                tempX += e.getSize() * 5;
                 tempY += e.getSize() * 3;
             }
-            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level + 1))));
+            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level))));
             e.setX(roundLocation(tempX, e.getSize()));
             e.setY(roundLocation(tempY, e.getSize()));
-            e.setLastDir(1);
+            e.setLastDir(0);
             enemyList[a] = e; 
         }
     }
@@ -350,35 +441,37 @@ public class Game extends JPanel {
    
     //allows the bad guys to wander around
     public static void initAI(){
-        for (int a = 0; a < ENEMIES; a++){
-            double temp = Math.random(); //uses a random number to calculate which way to go
-            //go left
-            if (temp < .25 && 
-                    enemyList[a].getX()-enemyList[a].getSize() >= 0 &&
-                    enemyList[a].getX()-enemyList[a].getSize() != Store.x) {
-                enemyList[a].setX(enemyList[a].getX()-enemyList[a].getSize());
-                enemyList[a].setLastDir(2); //left
-            }
-            //go right
-            else if (temp < .5 && temp >= .25 && 
-                    enemyList[a].getX()+enemyList[a].getSize() < xframe &&
-                    enemyList[a].getX()+enemyList[a].getSize() != Store.x) {
-                enemyList[a].setX(enemyList[a].getX()+enemyList[a].getSize());
-                enemyList[a].setLastDir(4); //right
-            }
-            //go up
-            if (temp < .75 && temp >= .5 && 
-                    enemyList[a].getY()-enemyList[a].getSize() >= 0 &&
-                    enemyList[a].getY()-enemyList[a].getSize() != Store.y) {
-                enemyList[a].setY(enemyList[a].getY()-enemyList[a].getSize());
-                enemyList[a].setLastDir(1); //up
-            }
-            //go down
-            else if (temp < 1 && temp >= .75 && 
-                    enemyList[a].getY()+enemyList[a].getSize() < yframe &&
-                    enemyList[a].getY()+enemyList[a].getSize() != Store.y) {
-                enemyList[a].setY(enemyList[a].getY()+enemyList[a].getSize());
-                enemyList[a].setLastDir(3); //down
+        if (!gameOver.get()){
+            for (int a = 0; a < ENEMIES; a++){
+                double temp = Math.random(); //uses a random number to calculate which way to go
+                //go left
+                if (temp < .25 && 
+                        enemyList[a].getX()-enemyList[a].getSize() >= 0 &&
+                        enemyList[a].getX()-enemyList[a].getSize() != Store.x) {
+                    enemyList[a].setX(enemyList[a].getX()-enemyList[a].getSize());
+                    enemyList[a].setLastDir(2); //left
+                }
+                //go right
+                else if (temp < .5 && temp >= .25 && 
+                        enemyList[a].getX()+enemyList[a].getSize() < xframe &&
+                        enemyList[a].getX()+enemyList[a].getSize() != Store.x) {
+                    enemyList[a].setX(enemyList[a].getX()+enemyList[a].getSize());
+                    enemyList[a].setLastDir(4); //right
+                }
+                //go up
+                if (temp < .75 && temp >= .5 && 
+                        enemyList[a].getY()-enemyList[a].getSize() >= 0 &&
+                        enemyList[a].getY()-enemyList[a].getSize() != Store.y) {
+                    enemyList[a].setY(enemyList[a].getY()-enemyList[a].getSize());
+                    enemyList[a].setLastDir(1); //up
+                }
+                //go down
+                else if (temp < 1 && temp >= .75 && 
+                        enemyList[a].getY()+enemyList[a].getSize() < yframe &&
+                        enemyList[a].getY()+enemyList[a].getSize() != Store.y) {
+                    enemyList[a].setY(enemyList[a].getY()+enemyList[a].getSize());
+                    enemyList[a].setLastDir(3); //down
+                }
             }
         }
     }
@@ -428,6 +521,7 @@ public class Game extends JPanel {
 
     public static void main(String[] args) throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
+        connect();
         JFrame frame = new JFrame("Dungeon Game"); 
         
         frame.addKeyListener(new KeyListener() {
@@ -440,28 +534,28 @@ public class Game extends JPanel {
                 switch (e.getKeyCode()) {
                     //w = move up
                     case KeyEvent.VK_W:
-                        if (!paused.get()) {
+                        if (!paused.get() && !gameOver.get()) {
                             Player.lastDir = 1;
                             Player.movePlayerUp();
                         }
                         break;
                     //a = move left
                     case KeyEvent.VK_A:
-                        if (!paused.get()) {
+                        if (!paused.get() && !gameOver.get()) {
                             Player.lastDir = 2;
                             Player.movePlayerLeft();
                         }
                         break;
                     //s = move down
                     case KeyEvent.VK_S:
-                        if (!paused.get()) {
+                        if (!paused.get() && !gameOver.get()) {
                             Player.lastDir = 3;
                             Player.movePlayerDown();
                         }
                         break;
                     //d = move right
                     case KeyEvent.VK_D:
-                        if (!paused.get()) {
+                        if (!paused.get() && !gameOver.get()) {
                             Player.lastDir = 4;
                             Player.movePlayerRight();
                         }
@@ -480,6 +574,17 @@ public class Game extends JPanel {
                         if (!instructionDisplay) instructionDisplay = true;
                         else if (instructionDisplay) instructionDisplay = false;
                         break;
+                    //r = restart game
+                    case KeyEvent.VK_R:
+                        level = 1;
+                        generateEnemies();
+                        generateMap();
+                        gameOver.set(false);
+                        startTime = System.currentTimeMillis();
+                        Player.resetPlayer();
+                        gameID++;
+                        initDB();
+                        
                     //j = use attack magic
                     case KeyEvent.VK_J:
                         if (Player.mana >= 20) {
@@ -574,18 +679,19 @@ public class Game extends JPanel {
             public void keyReleased(KeyEvent e) {
             }
         });
+        Game game = new Game();
+        nextLevel(game, frame);        
         generateEnemies();
         generateMap();
         double enemyFPS = 2;
         final int gameFPS = 60;
-        Game game = new Game();
-        nextLevel(game, frame);
+
 
         //game loop
         Runnable runnable = () -> {
             int aiTimer = 0;
             while (true) {
-                if (paused.get() || gameOver.get()) {
+                if (paused.get()) {
                     synchronized(thread) {
                         try {
                             frame.repaint();
@@ -627,7 +733,27 @@ public class Game extends JPanel {
                         Player.hp -= Math.round(Math.random() * enemyList[a].getHP());
                         enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
                         if (Player.hp <= 0) {
-                            gameOver.set(true);
+                            highScore = getHighScore();
+                            try {
+                                String url = "jdbc:sqlite:game.db";
+                                // create a connection to the database
+                                Connection conn = DriverManager.getConnection(url);
+                                String q = "UPDATE highscores "
+                                        + "SET enemiesKilled = "+enemiesKilled
+                                        + " WHERE id = "+gameID + ";";
+                                
+                                Statement st = null;
+                                try {
+                                    st = conn.createStatement();
+                                    st.executeUpdate(q);
+                                } catch (SQLException ex) {
+                                    Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                                conn.close();
+                                gameOver.set(true);
+                            } catch (SQLException ex) {
+                                Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                            }
                         }
                         if (enemyList[a].getHP() <= 0) {
                             enemyList[a].setX(-enemyList[a].getSize());
