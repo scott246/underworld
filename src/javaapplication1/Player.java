@@ -14,7 +14,7 @@ import static javaapplication1.Game.yframe;
  */
 public class Player {
     static int size = 20;
-    static int hp = 100;
+    static int hp = 10;
     static int minDamage = 1;
     static int maxDamage = 5;
     static int x = 400;

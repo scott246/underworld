@@ -28,12 +28,13 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public class Game extends JPanel {
     static long startTime;
-    static int ENEMIES = (int) Math.ceil(Math.random() * 50);
+    static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
     static int ROCKS = (int)1000;
     static Rock[] rockList = new Rock[ROCKS];
     static int POWERUPS = (int)200;
     static Powerup[] powerupList = new Powerup[POWERUPS];
+    static Store store = new Store();
     static int xframe = 805;
     static int yframe = 595;
     static int level = 0;
@@ -86,6 +87,11 @@ public class Game extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
             rock.fillRect(rockList[a].getX(), rockList[a].getY(), rockList[a].getSize(), rockList[a].getSize());
         }
+        g.setColor(Color.BLUE);
+        Graphics2D shop = (Graphics2D) g;
+        shop.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        shop.fillRect(Store.x, Store.y, Store.size, Store.size);
         g.setColor(Color.WHITE);
         Graphics2D text = (Graphics2D) g;
         text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -183,6 +189,16 @@ public class Game extends JPanel {
         }
         ROCKS = rockCount;
         POWERUPS = powerupCount;
+        //generate store
+        int storex = (roundLocation((int)(Math.random() * xframe - store.size * 2), store.size));
+        int storey = (roundLocation((int)(Math.random() * yframe - store.size * 3), store.size));
+        for (int a = 0; a < ROCKS; a++) {
+            if (storex == rockList[a].getX() && storey == rockList[a].getY()){
+                storex += store.size; storey += store.size;
+            }
+        }
+        store.setX(storex);
+        store.setY(storey);
     }
     
     //used to calculate time alive for HUD
@@ -375,7 +391,7 @@ public class Game extends JPanel {
                         if (enemyList[a].getHP() <= 0) {
                             enemyList[a].setX(-enemyList[a].getSize());
                             enemyList[a].setY(-enemyList[a].getSize());
-                            Player.hp += Math.ceil(Math.random() * 10);
+                            Player.hp += Math.ceil(Math.random() * (10 * level));
                         }
                         switch(Player.lastDir){
                             case 1: //up
@@ -421,6 +437,11 @@ public class Game extends JPanel {
                                 break;
                         }
                     }
+                }
+                //player collides with store
+                if (collisionDetect(Player.x, Player.y, store.x, store.y)) {
+                    //TODO: find a way to make a store window
+                    
                 }
                 //player collides with rock
                 for (int a = 0; a < ROCKS; a++){
@@ -503,6 +524,25 @@ public class Game extends JPanel {
                                         break;
                                 }
                             }
+                        }
+                        //enemy collides with store
+                        if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), store.x, store.y)) {
+                           switch(enemyList[b].getLastDir()){
+                                case 1: //up
+                                    enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
+                                    break;
+                                case 2: //left
+                                    enemyList[b].setX(enemyList[b].getX()+enemyList[b].getSize());
+                                    break;
+                                case 3: //down
+                                    enemyList[b].setY(enemyList[b].getY()-enemyList[b].getSize());
+                                    break;
+                                case 4: //right
+                                    enemyList[b].setX(enemyList[b].getX()-enemyList[b].getSize());
+                                    break;
+                                default:
+                                    break;
+                            } 
                         }
                     }
                 }
