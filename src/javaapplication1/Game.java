@@ -39,6 +39,7 @@ public class Game extends JPanel {
     static private AtomicBoolean gameOver;
     static private Thread thread;
     static boolean instructionDisplay = false;
+    static int enemiesKilled = 0;
 
     public Game() throws IOException {
         paused = new AtomicBoolean(false);
@@ -147,12 +148,25 @@ public class Game extends JPanel {
         //damage
         text.setFont(new Font("Courier New", Font.BOLD, 16));
         g.setColor(Color.WHITE);
-        text.drawString("Damage: "+Player.minDamage+"-"+Player.maxDamage, 660, 15);
+        FontMetrics m5 = g.getFontMetrics(g.getFont());
+        String datext = "Damage: "+Player.minDamage+"-"+Player.maxDamage;
+        int datextx = (xframe - m5.stringWidth(datext))*15/16;
+        int datexty = 15;
+        text.drawString(datext, datextx, datexty);
         //mana
         g.setColor(Color.BLUE);
-        text.drawString("Mana: "+Player.mana, 660, 30);
-        g.setColor(Color.WHITE);
+        FontMetrics m6 = g.getFontMetrics(g.getFont());
+        String mtext = "Mana: "+Player.mana;
+        int mtextx = (xframe - m6.stringWidth(mtext))*15/16;
+        int mtexty = 30;
+        text.drawString(mtext, mtextx, mtexty);
+        //enemies killed
+        g.setColor(Color.LIGHT_GRAY);
+        FontMetrics m7 = g.getFontMetrics(g.getFont());
+        String etext = "Enemies Killed: " + enemiesKilled;
+        text.drawString(etext, (xframe - m7.stringWidth(etext))*5/6, yframe-m6.getHeight() * 2);
         //pause screen
+        g.setColor(Color.WHITE);
         if (paused.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "PAUSED";
@@ -184,13 +198,6 @@ public class Game extends JPanel {
             for (String line : storeMenu.split("\n")) {
                 text.drawString(line, xtextx, ytexty+=text.getFontMetrics().getHeight());
             }
-//            text.drawString("==STORE==", 10, 60);
-//            text.drawString("[1] Buy +1 HP: "+Store.hpPrice+" Gold", 10, 80);
-//            text.drawString("[2] Buy +1 Mana: "+Store.manaPrice+" Gold", 10, 100);
-//            text.drawString("[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold", 10, 120);
-//            text.drawString("[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold", 10, 140);
-//            text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
-//            text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
         }
         //instructions screen
         String instructions = null;
@@ -249,9 +256,9 @@ public class Game extends JPanel {
     
     //makes the map, border, and powerups
     public static void generateMap() {
-        int densityMultiplier = 6;
+        double densityMultiplier = 3;
         double powerupFrequency = .03;
-        int power = (int)(Math.random() * densityMultiplier);
+        int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
         int rockCount = 0;
         int powerupCount = 0;
         for (int a = 0; a < xframe; a+=Rock.size) {
@@ -295,7 +302,7 @@ public class Game extends JPanel {
                 if (rockCount++ >= ROCKS-1) {
                     return;
                 }
-                power = (int)(Math.random() * densityMultiplier);
+                power = (int)Math.ceil((Math.random() + Math.random()) * densityMultiplier);
             }
         }
         ROCKS = rockCount;
@@ -321,11 +328,12 @@ public class Game extends JPanel {
     public static void generateEnemies() {
         for (int a = 0; a < ENEMIES; a++){            
             Enemy e = new Enemy();
-            int tempX = (int) (Math.random() * xframe - e.getSize() * 2);
-            int tempY = (int) (Math.random() * yframe - e.getSize() * 3);
+            int tempX = (int) (Math.random() * xframe - e.getSize() * 3);
+            int tempY = (int) (Math.random() * yframe - e.getSize() * 4);
+            //ensure enemies don't spawn on player
             if (tempX == Player.x && tempY == Player.y) {
-                tempX += e.getSize();
-                tempY += e.getSize();
+                tempX += e.getSize() * 3;
+                tempY += e.getSize() * 3;
             }
             e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level + 1))));
             e.setX(roundLocation(tempX, e.getSize()));
@@ -479,6 +487,12 @@ public class Game extends JPanel {
                             for (Enemy enemy : enemies){
                                 if (enemy != null) {
                                     enemy.setHP(enemy.getHP() - Player.maxDamage);
+                                    if (enemy.getHP() <= 0) {
+                                        enemy.setX(-enemy.getSize());
+                                        enemy.setY(-enemy.getSize());
+                                        Player.hp += Math.ceil(Math.random() * (10 * level));
+                                        Player.gp += Math.ceil(Math.random() * level);
+                                    }
                                 }
                             }
                             Player.mana -= 20;
@@ -562,7 +576,7 @@ public class Game extends JPanel {
         });
         generateEnemies();
         generateMap();
-        final double enemyFPS = 2;
+        double enemyFPS = 2;
         final int gameFPS = 60;
         Game game = new Game();
         nextLevel(game, frame);
@@ -585,6 +599,7 @@ public class Game extends JPanel {
                 for (int a = 0; a < ENEMIES; a++) { 
                     if (enemyList[a].getHP() <= 0) deadEnemies++;
                 }
+                enemiesKilled = deadEnemies;
                 if (ENEMIES == deadEnemies) {
                     frame.remove(frame);
                     Game g = null;
@@ -602,7 +617,7 @@ public class Game extends JPanel {
                     generateMap();
                 }
                 
-                if (aiTimer == (int)(100/enemyFPS)) {
+                if (aiTimer == (int)((100/enemyFPS)) * (level)) {
                     aiTimer = 0;
                     initAI();
                 }
