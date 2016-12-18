@@ -49,18 +49,15 @@ public class Game extends JPanel {
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
+        
+        //draw background
         g.setColor(Color.GRAY);
         Graphics2D background = (Graphics2D) g;
         background.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
         background.fillRect(0, 0, xframe, yframe);
-        g.setColor(Color.BLUE);
-        Graphics2D player1 = (Graphics2D) g;
-        player1.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-            RenderingHints.VALUE_ANTIALIAS_ON);
-        player1.fillOval(Player.x, Player.y, Player.size, Player.size);
-        g.setColor(Color.LIGHT_GRAY);
-        player1.drawString(Integer.toString(Player.hp), Player.x, Player.y+Player.size/2);
+        
+        //draw enemies
         for(int a = 0; a < ENEMIES; a++){
                 g.setColor(Color.RED);
                 Graphics2D enemy = (Graphics2D) g;
@@ -70,6 +67,8 @@ public class Game extends JPanel {
                 g.setColor(Color.BLACK);
                 enemy.drawString(Integer.toString(enemyList[a].getHP()), enemyList[a].getX(), enemyList[a].getY()+enemyList[a].getSize()/2);
         }
+        
+        //draw powerups
         for(int a = 0; a < POWERUPS; a++) {
             g.setColor(Color.YELLOW);
             Graphics2D powerup = (Graphics2D) g;
@@ -79,6 +78,24 @@ public class Game extends JPanel {
             g.setColor(Color.BLACK);
             powerup.drawString(powerupList[a].getTypeString(), powerupList[a].getX(), powerupList[a].getY()+Powerup.size/2);
         }
+        
+        //draw store
+        g.setColor(Color.GREEN);
+        Graphics2D shop = (Graphics2D) g;
+        shop.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        shop.fillRect(Store.x, Store.y, Store.size, Store.size);
+        
+        //draw player
+        g.setColor(Color.BLUE);
+        Graphics2D player1 = (Graphics2D) g;
+        player1.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+            RenderingHints.VALUE_ANTIALIAS_ON);
+        player1.fillOval(Player.x, Player.y, Player.size, Player.size);
+        g.setColor(Color.LIGHT_GRAY);
+        player1.drawString(Integer.toString(Player.hp), Player.x, Player.y+Player.size/2);
+        
+        //draw rocks
         for(int a = 0; a < ROCKS; a++){
             g.setColor(Color.BLACK);
             Graphics2D rock = (Graphics2D) g;
@@ -86,45 +103,72 @@ public class Game extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
             rock.fillRect(rockList[a].getX(), rockList[a].getY(), rockList[a].getSize(), rockList[a].getSize());
         }
-        g.setColor(Color.BLUE);
-        Graphics2D shop = (Graphics2D) g;
-        shop.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        shop.fillRect(Store.x, Store.y, Store.size, Store.size);
+        
+        //draw all text
         g.setColor(Color.WHITE);
         Graphics2D text = (Graphics2D) g;
         text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
         text.setFont(new Font("Courier New", Font.BOLD, 16));
+        //alive time
         text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 15);
         g.setColor(Color.YELLOW);
+        //gold
         text.drawString("Gold: "+Player.gp, 10, 30);
         g.setColor(Color.WHITE);
         text.setFont(new Font("Courier New", Font.BOLD, 16));
-        text.drawString("Level: "+ level, 340, 15);
+        //level
+        FontMetrics m1 = g.getFontMetrics(g.getFont());
+        String ltext = "Level: " + level;
+        int textx = (xframe - m1.stringWidth(ltext))/3;
+        int texty = 15;
+        text.drawString(ltext, textx, texty);
+        //HP
         g.setColor(Color.RED);
-        text.setFont(new Font("Courier New", Font.BOLD, 16));
-        text.drawString("HP: "+ Player.hp, 340, 30);
+        FontMetrics m2 = g.getFontMetrics(g.getFont());
+        String htext = "HP: " + Player.hp;
+        int htextx = (xframe - m2.stringWidth(htext))/3;
+        int htexty = 30;
+        text.drawString(htext, htextx, htexty);
+        //attack magic
+        g.setColor(Color.RED);
+        FontMetrics m3 = g.getFontMetrics(g.getFont());
+        String atext = "Attack Magic: " + Player.attackMagic;
+        int atextx = (xframe - m3.stringWidth(atext))*2/3;
+        int atexty = 15;
+        text.drawString(atext, atextx, atexty);
+        //defense magic
+        g.setColor(Color.BLUE);
+        FontMetrics m4 = g.getFontMetrics(g.getFont());
+        String dtext = "Defense Magic: " + Player.defenseMagic;
+        int dtextx = (xframe - m4.stringWidth(dtext))*2/3;
+        int dtexty = 30;
+        text.drawString(dtext, dtextx, dtexty);
+        //damage
         text.setFont(new Font("Courier New", Font.BOLD, 16));
         g.setColor(Color.WHITE);
         text.drawString("Damage: "+Player.minDamage+"-"+Player.maxDamage, 660, 15);
+        //mana
         g.setColor(Color.BLUE);
         text.drawString("Mana: "+Player.mana, 660, 30);
         g.setColor(Color.WHITE);
+        //pause screen
         if (paused.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "PAUSED";
-            int textx = (xframe - metrics.stringWidth(text1))/2;
-            int texty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
-            text.drawString(text1, textx, texty);
+            int ptextx = (xframe - metrics.stringWidth(text1))/2;
+            int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
+            text.drawString(text1, ptextx, ptexty);
         }
+        //game over screen
         if (gameOver.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "GAME OVER";
-            int textx = (xframe - metrics.stringWidth(text1))/2;
-            int texty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
-            text.drawString(text1, textx, texty);
+            int ptextx = (xframe - metrics.stringWidth(text1))/2;
+            int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
+            text.drawString(text1, ptextx, ptexty);
         }
+        //store screen
         g.setColor(Color.WHITE);
         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
             text.drawString("==STORE==", 10, 60);
@@ -135,6 +179,7 @@ public class Game extends JPanel {
             text.drawString("[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold", 10, 160);
             text.drawString("[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold", 10, 180);
         }
+        //instructions screen
         String instructions = null;
         if (instructionDisplay) {
             instructions = "[wasd] - move"+"\n"
@@ -143,11 +188,15 @@ public class Game extends JPanel {
                     + "[j] - use attack magic"+"\n"
                     + "[k] - use defense magic"+"\n"
                     + "[esc] - pause"+"\n"
-                    + "Red block = enemy, attack by bumping into them (both of you will take random damage)"+"\n"
+                    + "Red block = enemy"+"\n"
+                    + "(attack by bumping into them; both of you will take random damage)"+"\n"
                     + "Blue circle = you"+"\n"
-                    + "Blue block = store"+"\n"
-                    + "Yellow block = powerup which increases various stats"+"\n";
-            int y = yframe - text.getFontMetrics().getHeight() * 12;
+                    + "Green block = store"+"\n"
+                    + "(purchase items that increase your stats)"+"\n"
+                    + "Yellow block = powerup which increases various stats"+"\n"
+                    + "(increases your stats based on player level)"+"\n"
+                    + "(M=mana, H=health, -=minimum attack, +=maximum attack, G=gold)";
+            int y = yframe - text.getFontMetrics().getHeight() * 16;
             for (String line : instructions.split("\n")) {
                 text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
             }
@@ -261,22 +310,30 @@ public class Game extends JPanel {
         for (int a = 0; a < ENEMIES; a++){
             double temp = Math.random(); //uses a random number to calculate which way to go
             //go left
-            if (temp < .25 && enemyList[a].getX()-enemyList[a].getSize() >= 0) {
+            if (temp < .25 && 
+                    enemyList[a].getX()-enemyList[a].getSize() >= 0 &&
+                    enemyList[a].getX()-enemyList[a].getSize() != Store.x) {
                 enemyList[a].setX(enemyList[a].getX()-enemyList[a].getSize());
                 enemyList[a].setLastDir(2); //left
             }
             //go right
-            else if (temp < .5 && temp >= .25 && enemyList[a].getX()+enemyList[a].getSize() < xframe) {
+            else if (temp < .5 && temp >= .25 && 
+                    enemyList[a].getX()+enemyList[a].getSize() < xframe &&
+                    enemyList[a].getX()+enemyList[a].getSize() != Store.x) {
                 enemyList[a].setX(enemyList[a].getX()+enemyList[a].getSize());
                 enemyList[a].setLastDir(4); //right
             }
             //go up
-            if (temp < .75 && temp >= .5 && enemyList[a].getY()-enemyList[a].getSize() >= 0) {
+            if (temp < .75 && temp >= .5 && 
+                    enemyList[a].getY()-enemyList[a].getSize() >= 0 &&
+                    enemyList[a].getY()-enemyList[a].getSize() != Store.y) {
                 enemyList[a].setY(enemyList[a].getY()-enemyList[a].getSize());
                 enemyList[a].setLastDir(1); //up
             }
             //go down
-            else if (temp < 1 && temp >= .75 && enemyList[a].getY()+enemyList[a].getSize() < yframe) {
+            else if (temp < 1 && temp >= .75 && 
+                    enemyList[a].getY()+enemyList[a].getSize() < yframe &&
+                    enemyList[a].getY()+enemyList[a].getSize() != Store.y) {
                 enemyList[a].setY(enemyList[a].getY()+enemyList[a].getSize());
                 enemyList[a].setLastDir(3); //down
             }
@@ -310,10 +367,25 @@ public class Game extends JPanel {
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         level++;
     }
+    
+    public static Enemy[] getEnemiesIn3BlockRadius() {
+        Enemy[] enemies = new Enemy[50];
+        int enemyCount = 0;
+        for (int a = 0; a < ENEMIES; a++) {
+            if (enemyList[a].getX() >= Player.x - 3*Player.size && 
+                enemyList[a].getX() <= Player.x + 3*Player.size &&
+                enemyList[a].getY() >= Player.y - 3*Player.size &&
+                enemyList[a].getY() <= Player.y + 3*Player.size){
+                enemies[enemyCount] = enemyList[a];
+                enemyCount++;
+            }
+        }
+        return enemies;
+    }
 
     public static void main(String[] args) throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
-        JFrame frame = new JFrame("Game"); 
+        JFrame frame = new JFrame("Dungeon Game"); 
         
         frame.addKeyListener(new KeyListener() {
             @Override
@@ -323,30 +395,35 @@ public class Game extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
+                    //w = move up
                     case KeyEvent.VK_W:
                         if (!paused.get()) {
                             Player.lastDir = 1;
                             Player.movePlayerUp();
                         }
                         break;
+                    //a = move left
                     case KeyEvent.VK_A:
                         if (!paused.get()) {
                             Player.lastDir = 2;
                             Player.movePlayerLeft();
                         }
                         break;
+                    //s = move down
                     case KeyEvent.VK_S:
                         if (!paused.get()) {
                             Player.lastDir = 3;
                             Player.movePlayerDown();
                         }
                         break;
+                    //d = move right
                     case KeyEvent.VK_D:
                         if (!paused.get()) {
                             Player.lastDir = 4;
                             Player.movePlayerRight();
                         }
                         break;
+                    //i = display instructions
                     case KeyEvent.VK_I:
                         if (!paused.get()){
                             paused.set(true);
@@ -359,6 +436,26 @@ public class Game extends JPanel {
                         }
                         if (!instructionDisplay) instructionDisplay = true;
                         else if (instructionDisplay) instructionDisplay = false;
+                        break;
+                    //j = use attack magic
+                    case KeyEvent.VK_J:
+                        if (Player.mana >= 20) {
+                            Enemy[] enemies = getEnemiesIn3BlockRadius();
+                            for (Enemy enemy : enemies){
+                                if (enemy != null) {
+                                    enemy.setHP(enemy.getHP() - Player.maxDamage);
+                                }
+                            }
+                            Player.mana -= 20;
+                        }
+                        break;
+                    //k = use defense magic
+                    case KeyEvent.VK_K:
+                        if (Player.mana >= 10 && Player.defenseMagic >= 1) {
+                            Player.hp += (30 * level);
+                            Player.mana -= 10;
+                            Player.defenseMagic -= 1;
+                        }
                         break;
                     case KeyEvent.VK_1: //buy 1 hp if in store
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
@@ -408,6 +505,7 @@ public class Game extends JPanel {
                             }
                         }
                         break;
+                    //esc = pause
                     case KeyEvent.VK_ESCAPE:
                         if (!paused.get()){
                             paused.set(true);
@@ -450,10 +548,7 @@ public class Game extends JPanel {
                 }
                 int deadEnemies = 0;
                 for (int a = 0; a < ENEMIES; a++) { 
-                    if (enemyList[a].getX() < 0 ||
-                            enemyList[a].getY() < 0 ||
-                            enemyList[a].getX() > xframe ||
-                            enemyList[a].getY() > yframe) deadEnemies++;
+                    if (enemyList[a].getHP() <= 0) deadEnemies++;
                 }
                 if (ENEMIES == deadEnemies) {
                     frame.remove(frame);
@@ -488,6 +583,7 @@ public class Game extends JPanel {
                             enemyList[a].setX(-enemyList[a].getSize());
                             enemyList[a].setY(-enemyList[a].getSize());
                             Player.hp += Math.ceil(Math.random() * (10 * level));
+                            Player.gp += Math.ceil(Math.random() * level);
                         }
                         switch(Player.lastDir){
                             case 1: //up
@@ -514,22 +610,22 @@ public class Game extends JPanel {
                         powerupList[a].setY(-Powerup.size);
                         switch(powerupList[a].getType()) {
                             case GOLD:
-                                Player.gp += (int) (Math.random() * level * 10);
+                                Player.gp += (int) Math.ceil(Math.random() * level * 10);
                                 break;
                             case HEALTH:
-                                Player.hp += (int) (Math.random() * level * 10);
+                                Player.hp += (int) Math.ceil(Math.random() * level * 10);
                                 break;
                             case MINATTACK:
-                                Player.minDamage += (int) (Math.random() * level * 5);
+                                Player.minDamage += (int) Math.ceil(Math.random() * level * 5);
                                 if (Player.minDamage > Player.maxDamage){
                                     Player.maxDamage = Player.minDamage;
                                 }
                                 break;
                             case MAXATTACK:
-                                Player.maxDamage += (int) (Math.random() * level * 5);
+                                Player.maxDamage += (int) Math.ceil(Math.random() * level * 5);
                                 break;
                             case MANA:
-                                Player.mana += (int) (Math.random() * level * 10);
+                                Player.mana += (int) Math.ceil(Math.random() * level * 10);
                                 break;
                         }
                     }
