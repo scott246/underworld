@@ -18,6 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 /**
  *
  * @author Nathan
@@ -43,6 +45,8 @@ public class Game extends JPanel {
     static int enemiesKilled = 0;
     static int gameID = 1;
     static int highScore = 0;
+    static int secondHigh = 0;
+    static int thirdHigh = 0;
 
     public Game() throws IOException {
         paused = new AtomicBoolean(false);
@@ -58,20 +62,13 @@ public class Game extends JPanel {
             conn = DriverManager.getConnection(url);
             
             System.out.println("Connection to SQLite has been established.");
-                     
-                String q = "DROP TABLE IF EXISTS highscores;";
-                try (Statement st = conn.createStatement()) {
-                    st.executeUpdate(q);
-                }
-            
-            String u = "CREATE TABLE highscores "
-                + "(id INTEGER, "
+
+            String u = "CREATE TABLE IF NOT EXISTS highscores "
+                + "(date DATETIME, "
                 + "enemiesKilled INTEGER);";
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate(u);
             }
-            
-            initDB();
             
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -86,33 +83,40 @@ public class Game extends JPanel {
         }
     }
     
-    public static void initDB(){
+    public static void addScore(int score) {
         Connection conn = null;
         try {
+            //get current date
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+            System.out.println(dtf.format(now)); //2016/11/16 12:08:43
             // db parameters
             String url = "jdbc:sqlite:game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "INSERT INTO highscores "
-                    + "(id, enemiesKilled) "
-                    + "VALUES ("+gameID+","+enemiesKilled+");";
+                    + "VALUES ('"+dtf.format(now)+"', "+score+");";
             Statement st = conn.createStatement();
             st.executeUpdate(u);
             conn.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
     
-    public static int getHighScore(){
+    //get nth highest score
+    public static int getHighScore(int n){
         Connection conn = null;
         try {
             // db parameters
             String url = "jdbc:sqlite:game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
-            String q = "SELECT max(enemiesKilled) AS \"maxkills\" "
-                    + "FROM highscores;";
+            String q = "SELECT DISTINCT enemiesKilled " +
+                "FROM highscores " +
+                "ORDER BY 1 DESC " +
+                "LIMIT 1 OFFSET "+(n-1)+";";
             Statement st = conn.createStatement();
             ResultSet rs = st.executeQuery(q);
             int max = 0;
@@ -261,16 +265,28 @@ public class Game extends JPanel {
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "GAME OVER";
             String text2 = "==PRESS [r] TO RESTART==";
-            String text3 = "High Score: "+ highScore;
+            String text3 = "==High Scores==";
+            String text4 = ""+highScore;
+            String text5 = ""+secondHigh;
+            String text6 = ""+thirdHigh;
             int ptextx = (xframe - metrics.stringWidth(text1))/2;
             int ptextx2 = (xframe - metrics.stringWidth(text2))/2;
             int ptextx3 = (xframe - metrics.stringWidth(text3))/2;
+            int ptextx4 = (xframe - metrics.stringWidth(text4))/2;
+            int ptextx5 = (xframe - metrics.stringWidth(text5))/2;
+            int ptextx6 = (xframe - metrics.stringWidth(text6))/2;
             int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
             int ptexty2 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
             int ptexty3 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
+            int ptexty4 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 5;
+            int ptexty5 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 6;
+            int ptexty6 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 7;
             text.drawString(text1, ptextx, ptexty);
             text.drawString(text2, ptextx2, ptexty2);
             text.drawString(text3, ptextx3, ptexty3);
+            text.drawString(text4, ptextx4, ptexty4);
+            text.drawString(text5, ptextx5, ptexty5);
+            text.drawString(text6, ptextx6, ptexty6);
         }
         //store screen
         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {        
@@ -584,7 +600,6 @@ public class Game extends JPanel {
                         startTime = System.currentTimeMillis();
                         Player.resetPlayer();
                         gameID++;
-                        initDB();
                         
                     //j = use attack magic
                     case KeyEvent.VK_J:
@@ -734,27 +749,11 @@ public class Game extends JPanel {
                         Player.hp -= Math.round(Math.random() * enemyList[a].getHP());
                         enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
                         if (Player.hp <= 0) {
-                            highScore = getHighScore();
-                            try {
-                                String url = "jdbc:sqlite:game.db";
-                                // create a connection to the database
-                                Connection conn = DriverManager.getConnection(url);
-                                String q = "UPDATE highscores "
-                                        + "SET enemiesKilled = "+enemiesKilled
-                                        + " WHERE id = "+gameID + ";";
-                                
-                                Statement st = null;
-                                try {
-                                    st = conn.createStatement();
-                                    st.executeUpdate(q);
-                                } catch (SQLException ex) {
-                                    Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                                conn.close();
-                                gameOver.set(true);
-                            } catch (SQLException ex) {
-                                Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                            addScore(enemiesKilled);
+                            highScore = getHighScore(1);
+                            secondHigh = getHighScore(2);
+                            thirdHigh = getHighScore(3);
+                            gameOver.set(true);
                         }
                         if (enemyList[a].getHP() <= 0) {
                             enemyList[a].setX(-enemyList[a].getSize());
