@@ -18,6 +18,8 @@ public class Store {
     static int maxDamagePrice = 10 * (level + 1);
     static int attackMagicPrice = 20 * (level + 1);
     static int defenseMagicPrice = 20 * (level + 1);
+    static int bowPrice = 50;
+    static int arrowPrice = 2 * (level + 1);
     static int x = 0;
     static int y = 0;
     static int size = 20;

@@ -3,6 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+
+/**
+ * TODO:
+ * animations
+ * tell the player in real time what they can/can't do
+ */
 package javaapplication1;
 
 import java.awt.*;
@@ -47,6 +53,7 @@ public class Game extends JPanel {
     static int highScore = 0;
     static int secondHigh = 0;
     static int thirdHigh = 0;
+    static int headerRows = 3;
 
     public Game() throws IOException {
         paused = new AtomicBoolean(false);
@@ -196,20 +203,25 @@ public class Game extends JPanel {
         Graphics2D text = (Graphics2D) g;
         text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
             RenderingHints.VALUE_ANTIALIAS_ON);
-        text.setFont(new Font("Courier New", Font.BOLD, 16));
         //alive time
+        text.setFont(new Font("Courier New", Font.BOLD, 16));
         text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 15);
-        g.setColor(Color.YELLOW);
         //gold
+        g.setColor(Color.YELLOW);
         text.drawString("Gold: "+Player.gp, 10, 30);
+        //level
+        g.setColor(Color.WHITE);
+        FontMetrics m = g.getFontMetrics(g.getFont());
+        String ltext = "==Level " +level+"==";
+        text.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
+        //arrows
         g.setColor(Color.WHITE);
         text.setFont(new Font("Courier New", Font.BOLD, 16));
-        //level
         FontMetrics m1 = g.getFontMetrics(g.getFont());
-        String ltext = "Level: " + level;
+        String artext = "Arrows: " + Player.arrows;
         int textx = (xframe - m1.stringWidth(ltext))/3;
         int texty = 15;
-        text.drawString(ltext, textx, texty);
+        text.drawString(artext, textx, texty);
         //HP
         g.setColor(Color.RED);
         FontMetrics m2 = g.getFontMetrics(g.getFont());
@@ -236,21 +248,21 @@ public class Game extends JPanel {
         g.setColor(Color.WHITE);
         FontMetrics m5 = g.getFontMetrics(g.getFont());
         String datext = "Damage: "+Player.minDamage+"-"+Player.maxDamage;
-        int datextx = (xframe - m5.stringWidth(datext))*15/16;
+        int datextx = xframe - Rock.size - m5.stringWidth(datext);
         int datexty = 15;
         text.drawString(datext, datextx, datexty);
         //mana
         g.setColor(Color.BLUE);
         FontMetrics m6 = g.getFontMetrics(g.getFont());
         String mtext = "Mana: "+Player.mana;
-        int mtextx = (xframe - m6.stringWidth(mtext))*15/16;
+        int mtextx = xframe - Rock.size - m6.stringWidth(mtext);
         int mtexty = 30;
         text.drawString(mtext, mtextx, mtexty);
         //enemies killed
         g.setColor(Color.LIGHT_GRAY);
         FontMetrics m7 = g.getFontMetrics(g.getFont());
         String etext = "Enemies Killed: " + enemiesKilled;
-        text.drawString(etext, (xframe - m7.stringWidth(etext))*5/6, yframe-m6.getHeight() * 2);
+        text.drawString(etext, xframe - Rock.size - m7.stringWidth(etext), yframe-m7.getHeight() * 2);
         //pause screen
         g.setColor(Color.WHITE);
         if (paused.get()){
@@ -298,7 +310,9 @@ public class Game extends JPanel {
                     + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold\n"
                     + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold\n"
                     + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold\n"
-                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold\n";
+                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold\n"
+                    + "[7] Buy a Bow: "+Store.bowPrice+" Gold\n"
+                    + "[8] Buy +1 Arrows: "+Store.arrowPrice+" Gold\n";
             int xtextx = xframe/2;
             int ytexty = yframe/2 + text.getFontMetrics().getHeight();
             for (String line : storeMenu.split("\n")) {
@@ -310,22 +324,23 @@ public class Game extends JPanel {
         if (instructionDisplay) {
             g.setColor(Color.DARK_GRAY);
             text.setFont(new Font("Courier New", Font.BOLD, 14));
-            text.fillRect(0, Rock.size * 2, xframe, yframe);
+            text.fillRect(0, Rock.size * 3, xframe, yframe);
             g.setColor(Color.WHITE);
             instructions = "==INSTRUCTIONS==\n"
-                    + "[wasd]  move\n"
-                    + "[1-6]   buy item (while in the store)\n"
-                    + "[i]     toggle instructions\n"
+                    + "[wasd]  move (up, left, down, right)\n"
+                    + "[ijkl]  shoot arrows (up, left, down, right)\n"
+                    + "        requires you to buy a bow to use\n"
+                    + "[1-8]   buy item (while in the store)\n"
+                    + "[q]     toggle instructions\n"
                     + "        don't worry, the game is paused\n"
-                    + "[j]     use attack magic\n"
+                    + "[n]     use attack magic\n"
                     + "        every enemy in a 3 block radius takes your max damage\n"
                     + "        requires 20 mana to use\n"
-                    + "[k]     use defense magic\n"
+                    + "[m]     use defense magic\n"
                     + "        increases your health by (30*your_level)\n"
                     + "        requires 10 mana to use\n"
                     + "[esc]   pause\n"
                     + "[r]     restart game\n"
-                    + "\n"
                     + "==ENTITIES==\n"
                     + "Red     enemy\n"
                     + "        attack by bumping into them\n"
@@ -337,21 +352,20 @@ public class Game extends JPanel {
                     + "Yellow  powerup which increases various stats\n"
                     + "        increases stats based on player level\n"
                     + "        M = mana, H = health, - = minimum attack, + = maximum attack, G = gold\n"
-                    + "\n"
                     + "==GAMEPLAY==\n"
                     + "Navigate through the dungeon, kill all the enemies to get to the next level,\n"
                     + "get through as many levels as possible before you inevitably die.";
-            int y = Rock.size + text.getFontMetrics().getHeight() * 2;
+            int y = Rock.size * 3;
             for (String line : instructions.split("\n")) {
                 text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
             }
-            String returntext = "==PRESS [i] TO RETURN TO THE GAME==";
+            String returntext = "==PRESS [q] TO RETURN TO THE GAME==";
             text.drawString(returntext, (xframe - text.getFontMetrics().stringWidth(returntext))/2, y+=text.getFontMetrics().getHeight());
         }
         
         else if (!instructionDisplay) {
             text.setFont(new Font("Courier New", Font.BOLD, 16));
-            instructions = "Press [i] to display instructions";
+            instructions = "Press [q] to display instructions";
             text.drawString(instructions, 10, yframe - text.getFontMetrics().getHeight() * 2);
         }
     }
@@ -372,11 +386,12 @@ public class Game extends JPanel {
             for (int b = 0; b < yframe; b+=Rock.size) {
                 while(power > 0) {
                     //generate border
-                    if (a == 0 || b == Rock.size ||
+                    if (a == 0 || b == Rock.size || b == Rock.size * 2 ||
                         b == 0 || 
                         a == roundLocation(xframe, Rock.size)-Rock.size ||
                         a == roundLocation(xframe, Rock.size) ||
                         b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
                         b == roundLocation(yframe, Rock.size)) {
                         rockList[rockCount] = new Rock();
                         rockList[rockCount].setX(roundLocation(a, Rock.size));
@@ -492,6 +507,10 @@ public class Game extends JPanel {
         }
     }
     
+    public static void attackWithBow(){
+        
+    }
+    
     public static void knockback(int lastDir, int size, int x, int y) {
         switch(lastDir){
             case 1: //up
@@ -534,6 +553,40 @@ public class Game extends JPanel {
             }
         }
         return enemies;
+    }
+    
+    //used to calculate what the arrow will hit
+    public static Enemy getEnemyInDirection(int dir) {
+        int arrowx = Player.x;
+        int arrowy = Player.y;
+        boolean hitRock = false;
+        while (!hitRock) {
+            for (int a = 0; a < ROCKS; a++){
+                if (rockList[a].getX() == arrowx &&
+                    rockList[a].getY() == arrowy) {
+                    hitRock = true;
+                }
+            }
+            for (int b = 0; b < ENEMIES; b++) {
+                if (enemyList[b].getX() == arrowx &&
+                    enemyList[b].getY() == arrowy){
+                    return enemyList[b];
+                }
+            }
+            switch (dir) {
+                case 1://up
+                    arrowy-=Player.size; break;
+                case 2://left
+                    arrowx-=Player.size; break;
+                case 3://down
+                    arrowy+=Player.size; break;
+                case 4://right
+                    arrowx+=Player.size; break;
+                default:
+                    return null; //invalid input
+            }
+        }
+        return null; //hit a rock or the end of the screen
     }
 
     public static void main(String[] args) throws InterruptedException, IOException {
@@ -578,7 +631,7 @@ public class Game extends JPanel {
                         }
                         break;
                     //i = display instructions
-                    case KeyEvent.VK_I:
+                    case KeyEvent.VK_Q:
                         if (!paused.get()){
                             paused.set(true);
                         }
@@ -602,7 +655,7 @@ public class Game extends JPanel {
                         gameID++;
                         
                     //j = use attack magic
-                    case KeyEvent.VK_J:
+                    case KeyEvent.VK_N:
                         if (Player.mana >= 20) {
                             Enemy[] enemies = getEnemiesIn3BlockRadius();
                             for (Enemy enemy : enemies){
@@ -620,13 +673,75 @@ public class Game extends JPanel {
                         }
                         break;
                     //k = use defense magic
-                    case KeyEvent.VK_K:
+                    case KeyEvent.VK_M:
                         if (Player.mana >= 10 && Player.defenseMagic >= 1) {
                             Player.hp += (30 * level);
                             Player.mana -= 10;
                             Player.defenseMagic -= 1;
                         }
                         break;
+                    case KeyEvent.VK_I:
+                        if (Player.bow && Player.arrows >= 1) {
+                            Enemy enemy = getEnemyInDirection(1);
+                            if (enemy != null) {
+                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                                if (enemy.getHP() <= 0) {
+                                    enemy.setX(-enemy.getSize());
+                                    enemy.setY(-enemy.getSize());
+                                    Player.hp += Math.ceil(Math.random() * (10 * level));
+                                    Player.gp += Math.ceil(Math.random() * level);
+                                }
+                            }
+                            Player.arrows--;
+                        }
+                        break;
+                    case KeyEvent.VK_J:
+                        if (Player.bow && Player.arrows >= 1) {
+                            Enemy enemy = getEnemyInDirection(2);
+                            if (enemy != null) {
+                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                                if (enemy.getHP() <= 0) {
+                                    enemy.setX(-enemy.getSize());
+                                    enemy.setY(-enemy.getSize());
+                                    Player.hp += Math.ceil(Math.random() * (10 * level));
+                                    Player.gp += Math.ceil(Math.random() * level);
+                                }
+                            }
+                            Player.arrows--;
+                            
+                        }
+                        break;
+                    case KeyEvent.VK_K:
+                        if (Player.bow && Player.arrows >= 1) {
+                            Enemy enemy = getEnemyInDirection(3);
+                            if (enemy != null) {
+                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                                if (enemy.getHP() <= 0) {
+                                    enemy.setX(-enemy.getSize());
+                                    enemy.setY(-enemy.getSize());
+                                    Player.hp += Math.ceil(Math.random() * (10 * level));
+                                    Player.gp += Math.ceil(Math.random() * level);
+                                }
+                            }
+                            Player.arrows--;
+                        }
+                        break;
+                    case KeyEvent.VK_L:
+                        if (Player.bow && Player.arrows >= 1) {
+                            Enemy enemy = getEnemyInDirection(4);
+                            if (enemy != null) {
+                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                                if (enemy.getHP() <= 0) {
+                                    enemy.setX(-enemy.getSize());
+                                    enemy.setY(-enemy.getSize());
+                                    Player.hp += Math.ceil(Math.random() * (10 * level));
+                                    Player.gp += Math.ceil(Math.random() * level);
+                                }
+                            }
+                            Player.arrows--;
+                        }
+                        break;
+                        
                     case KeyEvent.VK_1: //buy 1 hp if in store
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.hpPrice) {
@@ -672,6 +787,22 @@ public class Game extends JPanel {
                             if (Player.gp >= Store.defenseMagicPrice) {
                                 Player.gp -= Store.defenseMagicPrice;
                                 Player.defenseMagic += 1;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_7: //buy bow if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.bowPrice) {
+                                Player.gp -= Store.bowPrice;
+                                Player.bow = true;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_8: //buy 1 arrow if in store
+                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.arrowPrice) {
+                                Player.gp -= Store.arrowPrice;
+                                Player.arrows += 1;
                             }
                         }
                         break;

@@ -24,6 +24,8 @@ public class Player {
     static int mana = 0;
     static int attackMagic = 0;
     static int defenseMagic = 0;
+    static boolean bow = false;
+    static int arrows = 0;
     
     public static void movePlayerLeft() {
         if (x > 0) x -= size;
@@ -49,5 +51,7 @@ public class Player {
         mana = 0;
         attackMagic = 0;
         defenseMagic = 0;
+        bow = false;
+        arrows = 0;
     }
 }
