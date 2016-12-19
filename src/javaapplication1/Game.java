@@ -33,8 +33,8 @@ public class Game extends JPanel {
     static int POWERUPS = (int)200;
     static Powerup[] powerupList = new Powerup[POWERUPS];
     static Store store = new Store();
-    static int xframe = 805;
-    static int yframe = 595;
+    static final int xframe = 800;
+    static final int yframe = 600;
     static int level = 0;
     static private AtomicBoolean paused;
     static private AtomicBoolean gameOver;
@@ -358,9 +358,9 @@ public class Game extends JPanel {
                     //generate border
                     if (a == 0 || b == Rock.size ||
                         b == 0 || 
-                        a == roundLocation(xframe, Rock.size)-Rock.size * 2 ||
+                        a == roundLocation(xframe, Rock.size)-Rock.size ||
                         a == roundLocation(xframe, Rock.size) ||
-                        b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
                         b == roundLocation(yframe, Rock.size)) {
                         rockList[rockCount] = new Rock();
                         rockList[rockCount].setX(roundLocation(a, Rock.size));
@@ -500,6 +500,7 @@ public class Game extends JPanel {
         f.setSize(xframe, yframe);
         f.setResizable(false);
         f.setVisible(true);
+        f.setPreferredSize(new Dimension(xframe, Rock.size));
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         level++;
     }
