@@ -7,6 +7,9 @@
 /**
  * TODO:
  * animations
+ *  magic
+ *  movement
+ *  arrows
  * tell the player in real time what they can/can't do
  */
 package javaapplication1;
@@ -34,13 +37,15 @@ import java.time.format.DateTimeFormatter;
 @SuppressWarnings("serial")
 public class Game extends JPanel {
     static long startTime;
+    static long pauseTime;
     static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
-    static int ROCKS = (int)1000;
+    static int ROCKS = (int)2000;
     static Rock[] rockList = new Rock[ROCKS];
     static int POWERUPS = (int)200;
     static Powerup[] powerupList = new Powerup[POWERUPS];
     static Store store = new Store();
+    static Arrow arrow;
     static final int xframe = 800;
     static final int yframe = 600;
     static int level = 0;
@@ -53,7 +58,6 @@ public class Game extends JPanel {
     static int highScore = 0;
     static int secondHigh = 0;
     static int thirdHigh = 0;
-    static int headerRows = 3;
 
     public Game() throws IOException {
         paused = new AtomicBoolean(false);
@@ -180,6 +184,13 @@ public class Game extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
         shop.fillRect(Store.x, Store.y, Store.size, Store.size);
         
+        //draw arrow
+        g.setColor(Color.BLACK);
+        Graphics2D a = (Graphics2D) g;
+        a.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        a.fillOval(Arrow.x + 5, Arrow.y + 5, Arrow.size, Arrow.size);
+        
         //draw player
         g.setColor(Color.BLUE);
         Graphics2D player1 = (Graphics2D) g;
@@ -190,12 +201,12 @@ public class Game extends JPanel {
         player1.drawString(Integer.toString(Player.hp), Player.x, Player.y+Player.size/2);
         
         //draw rocks
-        for(int a = 0; a < ROCKS; a++){
+        for(int b = 0; b < ROCKS; b++){
             g.setColor(Color.BLACK);
             Graphics2D rock = (Graphics2D) g;
             rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            rock.fillRect(rockList[a].getX(), rockList[a].getY(), rockList[a].getSize(), rockList[a].getSize());
+            rock.fillRect(rockList[b].getX(), rockList[b].getY(), rockList[b].getSize(), rockList[b].getSize());
         }
         
         //draw all text
@@ -507,8 +518,33 @@ public class Game extends JPanel {
         }
     }
     
-    public static void attackWithBow(){
-        
+    public static void animateArrowShot(){
+        switch(Arrow.dir){
+            case 1: //up
+                Arrow.y = Arrow.y-Arrow.speed; break;
+            case 2: //left
+                Arrow.x = Arrow.x-Arrow.speed; break;
+            case 3: //down
+                Arrow.y = Arrow.y+Arrow.speed; break;
+            case 4: //right
+                Arrow.x = Arrow.x+Arrow.speed; break;
+        }
+        for (int a = 0; a < ROCKS; a++){
+            if (rockList[a].getX() == Arrow.x &&
+                rockList[a].getY() == Arrow.y) {
+                Arrow.exists = false;
+                Arrow.x = -Arrow.size;
+                Arrow.y = -Arrow.size;
+            }
+        }
+        for (int a = 0; a < ENEMIES; a++){
+            if (enemyList[a].getX() == Arrow.x &&
+                enemyList[a].getY() == Arrow.y) {
+                Arrow.exists = false;
+                Arrow.x = -Arrow.size;
+                Arrow.y = -Arrow.size;
+            }
+        }
     }
     
     public static void knockback(int lastDir, int size, int x, int y) {
@@ -600,6 +636,7 @@ public class Game extends JPanel {
             }
 
             @Override
+            //KEY BINDINGS
             public void keyPressed(KeyEvent e) {
                 switch (e.getKeyCode()) {
                     //w = move up
@@ -680,8 +717,13 @@ public class Game extends JPanel {
                             Player.defenseMagic -= 1;
                         }
                         break;
+                    //i = shoot arrow up
                     case KeyEvent.VK_I:
                         if (Player.bow && Player.arrows >= 1) {
+                            if (!Arrow.exists){
+                                Arrow.dir = 1; Arrow.exists = true;
+                                Arrow.x = Player.x; Arrow.y = Player.y;
+                            }
                             Enemy enemy = getEnemyInDirection(1);
                             if (enemy != null) {
                                 enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
@@ -695,8 +737,13 @@ public class Game extends JPanel {
                             Player.arrows--;
                         }
                         break;
+                    //j = shoot arrow left
                     case KeyEvent.VK_J:
                         if (Player.bow && Player.arrows >= 1) {
+                            if (!Arrow.exists){
+                                Arrow.dir = 2; Arrow.exists = true;
+                                Arrow.x = Player.x; Arrow.y = Player.y;
+                            }
                             Enemy enemy = getEnemyInDirection(2);
                             if (enemy != null) {
                                 enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
@@ -711,8 +758,13 @@ public class Game extends JPanel {
                             
                         }
                         break;
+                    //k = shoot arrow down
                     case KeyEvent.VK_K:
                         if (Player.bow && Player.arrows >= 1) {
+                            if (!Arrow.exists){
+                                Arrow.dir = 3; Arrow.exists = true;
+                                Arrow.x = Player.x; Arrow.y = Player.y;
+                            }
                             Enemy enemy = getEnemyInDirection(3);
                             if (enemy != null) {
                                 enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
@@ -726,8 +778,13 @@ public class Game extends JPanel {
                             Player.arrows--;
                         }
                         break;
+                    //l = shoot arrow right
                     case KeyEvent.VK_L:
                         if (Player.bow && Player.arrows >= 1) {
+                            if (!Arrow.exists){
+                                Arrow.dir = 4; Arrow.exists = true;
+                                Arrow.x = Player.x; Arrow.y = Player.y;
+                            }
                             Enemy enemy = getEnemyInDirection(4);
                             if (enemy != null) {
                                 enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
@@ -848,6 +905,7 @@ public class Game extends JPanel {
                         }
                     }
                 }
+                animateArrowShot();
                 int deadEnemies = 0;
                 for (int a = 0; a < ENEMIES; a++) { 
                     if (enemyList[a].getHP() <= 0) deadEnemies++;
@@ -879,18 +937,18 @@ public class Game extends JPanel {
                     if (collisionDetect(Player.x, Player.y, enemyList[a].getX(), enemyList[a].getY())){
                         Player.hp -= Math.round(Math.random() * enemyList[a].getHP());
                         enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                        if (enemyList[a].getHP() <= 0) {
+                            enemyList[a].setX(-enemyList[a].getSize());
+                            enemyList[a].setY(-enemyList[a].getSize());
+                            Player.hp += Math.ceil(Math.random() * (10 * level));
+                            Player.gp += Math.ceil(Math.random() * level);
+                        }
                         if (Player.hp <= 0) {
                             addScore(enemiesKilled);
                             highScore = getHighScore(1);
                             secondHigh = getHighScore(2);
                             thirdHigh = getHighScore(3);
                             gameOver.set(true);
-                        }
-                        if (enemyList[a].getHP() <= 0) {
-                            enemyList[a].setX(-enemyList[a].getSize());
-                            enemyList[a].setY(-enemyList[a].getSize());
-                            Player.hp += Math.ceil(Math.random() * (10 * level));
-                            Player.gp += Math.ceil(Math.random() * level);
                         }
                         switch(Player.lastDir){
                             case 1: //up
