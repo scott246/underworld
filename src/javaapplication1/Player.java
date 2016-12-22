@@ -21,11 +21,11 @@ public class Player {
     static int y = Game.roundLocation(yframe/2, size);
     static int lastDir = 0;
     static int gp = 0;
-    static int mana = 0;
-    static int attackMagic = 0;
-    static int defenseMagic = 0;
-    static boolean bow = false;
-    static int arrows = 0;
+    static int mana = 20;
+    static int attackMagic = 1;
+    static int defenseMagic = 1;
+    static boolean bow = true;
+    static int arrows = 10;
     
     public static void movePlayerLeft() {
         if (x > 0) x -= size;

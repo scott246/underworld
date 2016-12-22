@@ -6,13 +6,12 @@
 
 /**
  * TODO:
- * fix game timer
  * make it possible to shoot more than one arrow at a time
  * animations
  *  magic
  *  movement
- *  arrows
  * tell the player in real time what they can/can't do
+ * update graphics
  */
 package javaapplication1;
 
@@ -42,6 +41,7 @@ public class Game extends JPanel {
     static long startTime = 0;
     static long pauseTime = 0;
     static long startPauseTime = 0;
+    static long deathtime = 0;
     
     //enemy variables
     static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
@@ -72,6 +72,7 @@ public class Game extends JPanel {
     static public AtomicBoolean gameOver;
     static public Thread thread;
     static boolean instructionDisplay = false;
+    static boolean playerIsDead = false;
     
     //high score variables
     static int highScore = 0;
@@ -298,6 +299,9 @@ public class Game extends JPanel {
      * @return time alive
      */
     public static double getTimeAlive(){
+        if (gameOver.get()){
+            return deathtime - startTime - pauseTime;
+        }
         return System.currentTimeMillis() - startTime - pauseTime;
     }
 
@@ -308,12 +312,13 @@ public class Game extends JPanel {
         for (int a = 0; a < ENEMIES; a++){            
             Enemy e = new Enemy();
             
-            //generate a random x and y variable
+            //generate a random x and y variable within the border
             int tempX = roundLocation(
-                    (int) (Math.random() * xframe - e.getSize() * 3),
+                    (int) ((Math.random() * xframe) - Rock.size) + Rock.size,
                     e.getSize());
             int tempY = roundLocation(
-                    (int) (Math.random() * yframe - e.getSize() * 4),
+                    (int) ((Math.random() * yframe) - Rock.size * 2) +
+                            Rock.size * 3,
                     e.getSize());
             
             //ensure enemies don't spawn on player
@@ -407,43 +412,6 @@ public class Game extends JPanel {
                             enemyList[a].getY()+enemyList[a].getSize());
                     enemyList[a].setLastDir(3); //down
                 }
-            }
-        }
-    }
-    
-    /**
-     * Allows a basic arrow shooting animation by having the arrow move 
-     * according to its speed variable once every game loop iteration.
-     */
-    public static void animateArrowShot(){
-        switch(Arrow.dir){
-            case 1: //up
-                Arrow.y = Arrow.y-Arrow.speed; break;
-            case 2: //left
-                Arrow.x = Arrow.x-Arrow.speed; break;
-            case 3: //down
-                Arrow.y = Arrow.y+Arrow.speed; break;
-            case 4: //right
-                Arrow.x = Arrow.x+Arrow.speed; break;
-        }
-        
-        //once the arrow hits a rock, the arrow is gone
-        for (int a = 0; a < ROCKS; a++){
-            if (rockList[a].getX() == Arrow.x &&
-                rockList[a].getY() == Arrow.y) {
-                Arrow.exists = false;
-                Arrow.x = -Arrow.size;
-                Arrow.y = -Arrow.size;
-            }
-        }
-        
-        //once the arrow hits an enemy, the arrow is gone
-        for (int a = 0; a < ENEMIES; a++){
-            if (enemyList[a].getX() == Arrow.x &&
-                enemyList[a].getY() == Arrow.y) {
-                Arrow.exists = false;
-                Arrow.x = -Arrow.size;
-                Arrow.y = -Arrow.size;
             }
         }
     }
@@ -547,7 +515,6 @@ public class Game extends JPanel {
                 Graphics2D enemy = (Graphics2D) g;
                 enemy.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
-                System.out.println("Making enemy "+a+"...");
                 enemy.fillRect(
                         enemyList[a].getX(),
                         enemyList[a].getY(),
@@ -592,6 +559,34 @@ public class Game extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
         a.fillOval(Arrow.x + 5, Arrow.y + 5, Arrow.size, Arrow.size);
         
+        //draw attack magic
+        if (Magic.attackMagicExists){
+            g.setColor(Color.RED);
+            Graphics2D am = (Graphics2D) g;
+            am.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            for (int x : Magic.x){
+                for (int y : Magic.y){
+                    am.fillOval(x + 5, y + 5, Magic.size, Magic.size);
+                }
+            }
+        }
+        
+        
+        //draw defense magic
+        if (Magic.defenseMagicExists){
+            g.setColor(Color.BLUE);
+            Graphics2D dm = (Graphics2D) g;
+            dm.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+            for (int x : Magic.x){
+                for (int y : Magic.y){
+                    dm.fillOval(x + 5, y + 5, Magic.size, Magic.size);
+                }
+            }
+        }
+        
+        
         //draw player
         g.setColor(Color.BLUE);
         Graphics2D player1 = (Graphics2D) g;
@@ -629,16 +624,25 @@ public class Game extends JPanel {
         g.setColor(Color.YELLOW);
         text.drawString("Gold: "+Player.gp, 10, 30);
         //level
-        g.setColor(Color.WHITE);
-        FontMetrics m = g.getFontMetrics(g.getFont());
-        String ltext = "==Level " +level+"==";
-        text.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
+        if (!instructionDisplay){
+            g.setColor(Color.WHITE);
+            FontMetrics m = g.getFontMetrics(g.getFont());
+            String ltext = "==Level " +level+"==";
+            text.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
+        }
+        if (instructionDisplay){
+            g.setColor(Color.WHITE);
+            FontMetrics m = g.getFontMetrics(g.getFont());
+            String ltext = "==PRESS [q] TO RETURN TO GAME==";
+            text.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
+        }
+        
         //arrows
         g.setColor(Color.WHITE);
         text.setFont(new Font("Courier New", Font.BOLD, 16));
         FontMetrics m1 = g.getFontMetrics(g.getFont());
         String artext = "Arrows: " + Player.arrows;
-        int textx = (xframe - m1.stringWidth(ltext))/3;
+        int textx = (xframe - m1.stringWidth(artext))/3;
         int texty = 15;
         text.drawString(artext, textx, texty);
         //HP
@@ -800,11 +804,6 @@ public class Game extends JPanel {
             for (String line : instructions.split("\n")) {
                 text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
             }
-            String returntext = "==PRESS [q] TO RETURN TO THE GAME==";
-            text.drawString(
-                    returntext, 
-                    (xframe - text.getFontMetrics().stringWidth(returntext))/2, 
-                    y+=text.getFontMetrics().getHeight());
         }
         
         else if (!instructionDisplay) {
@@ -862,9 +861,23 @@ public class Game extends JPanel {
                         }
                     }
                 }
+                if (gameOver.get()){
+                    if (!playerIsDead){
+                        deathtime = System.currentTimeMillis();
+                    }
+                    playerIsDead = true;
+                }
                 
                 //animate stuff once per game loop
-                animateArrowShot();
+                if (Arrow.exists){
+                    Arrow.animateArrowShot();
+                }
+                if (Magic.attackMagicExists){
+                    Magic.animateAttackMagic();
+                }
+                if (Magic.defenseMagicExists){
+                    Magic.animateDefenseMagic();
+                }
                 
                 //calculate enemies killed
                 int deadEnemies = 0;

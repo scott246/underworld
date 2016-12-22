@@ -5,6 +5,9 @@
  */
 package javaapplication1;
 
+import static javaapplication1.Game.ROCKS;
+import static javaapplication1.Game.ENEMIES;
+
 /**
  *
  * @author Nathan
@@ -38,4 +41,40 @@ public class Arrow {
         dir = d1;
     }
     
+    /**
+     * Allows a basic arrow shooting animation by having the arrow move 
+     * according to its speed variable once every game loop iteration.
+     */
+    public static void animateArrowShot(){
+        switch(dir){
+            case 1: //up
+                y -= speed; break;
+            case 2: //left
+                x -= speed; break;
+            case 3: //down
+                y += speed; break;
+            case 4: //right
+                x += speed; break;
+        }
+        
+        //once the arrow hits a rock, the arrow is gone
+        for (int a = 0; a < ROCKS; a++){
+            if (Game.rockList[a].getX() == x &&
+                Game.rockList[a].getY() == y) {
+                exists = false;
+                x = -size;
+                y = -size;
+            }
+        }
+        
+        //once the arrow hits an enemy, the arrow is gone
+        for (int a = 0; a < ENEMIES; a++){
+            if (Game.enemyList[a].getX() == x &&
+                Game.enemyList[a].getY() == y) {
+                exists = false;
+                x = -size;
+                y = -size;
+            }
+        }
+    }
 }

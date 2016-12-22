@@ -74,9 +74,12 @@ public class KeyBindings {
                         Game.pauseTime = 0;
                         Player.resetPlayer();
                         
-                    //j = use attack magic
+                    //n = use attack magic
                     case KeyEvent.VK_N:
                         if (Player.mana >= 20) {
+                            if (!Magic.attackMagicExists){
+                                Magic.attackMagicExists = true;
+                            }
                             Enemy[] enemies = Game.getEnemiesIn3BlockRadius();
                             for (Enemy enemy : enemies){
                                 if (enemy != null) {
@@ -90,11 +93,15 @@ public class KeyBindings {
                                 }
                             }
                             Player.mana -= 20;
+                            Player.attackMagic -= 1;
                         }
                         break;
-                    //k = use defense magic
+                    //m = use defense magic
                     case KeyEvent.VK_M:
                         if (Player.mana >= 10 && Player.defenseMagic >= 1) {
+                            if (!Magic.defenseMagicExists){
+                                Magic.defenseMagicExists = true;
+                            }
                             Player.hp += (30 * Game.level);
                             Player.mana -= 10;
                             Player.defenseMagic -= 1;
