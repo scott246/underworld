@@ -6,6 +6,8 @@
 
 /**
  * TODO:
+ * fix game timer
+ * make it possible to shoot more than one arrow at a time
  * animations
  *  magic
  *  movement
@@ -36,8 +38,9 @@ import java.time.format.DateTimeFormatter;
 
 @SuppressWarnings("serial")
 public class Game extends JPanel {
-    static long startTime;
-    static long pauseTime;
+    static long startTime = 0;
+    static long pauseTime = 0;
+    static long startPauseTime = 0;
     static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
     static int ROCKS = (int)2000;
@@ -316,8 +319,8 @@ public class Game extends JPanel {
             text.setFont(new Font("Courier New", Font.BOLD, 14));
             g.setColor(Color.WHITE);
             String storeMenu = "==STORE==\n"
-                    + "[1] Buy +1 HP: "+Store.hpPrice+" Gold\n"
-                    + "[2] Buy +1 Mana: "+Store.manaPrice+" Gold\n"
+                    + "[1] Buy HP: "+Store.hpPrice+" Gold\n"
+                    + "[2] Buy Mana: "+Store.manaPrice+" Gold\n"
                     + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold\n"
                     + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold\n"
                     + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold\n"
@@ -454,7 +457,7 @@ public class Game extends JPanel {
     
     //used to calculate time alive for HUD
     public static double getTimeAlive(){
-        return System.currentTimeMillis() - startTime;
+        return System.currentTimeMillis() - startTime - pauseTime;
     }
     
     //makes bad guys
@@ -688,6 +691,7 @@ public class Game extends JPanel {
                         generateMap();
                         gameOver.set(false);
                         startTime = System.currentTimeMillis();
+                        pauseTime = 0;
                         Player.resetPlayer();
                         gameID++;
                         
@@ -803,7 +807,7 @@ public class Game extends JPanel {
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.hpPrice) {
                                 Player.gp -= Store.hpPrice;
-                                Player.hp += 1;
+                                Player.hp += (2*level);
                             }
                         }
                         break;
@@ -811,7 +815,7 @@ public class Game extends JPanel {
                         if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.manaPrice) {
                                 Player.gp -= Store.manaPrice;
-                                Player.mana += 1;
+                                Player.mana += (2*level);
                             }
                         }
                         break;
@@ -866,10 +870,12 @@ public class Game extends JPanel {
                     //esc = pause
                     case KeyEvent.VK_ESCAPE:
                         if (!paused.get()){
+                            startPauseTime = System.currentTimeMillis();
                             paused.set(true);
                         }
                         else {
                             paused.set(false);
+                            pauseTime += System.currentTimeMillis() - startPauseTime;
                             synchronized(thread){
                                thread.notify(); 
                             }
@@ -994,10 +1000,6 @@ public class Game extends JPanel {
                                 break;
                         }
                     }
-                }
-                //player collides with store
-                if (collisionDetect(Player.x, Player.y, store.x, store.y)) {
-                    //TODO: find a way to make a store window
                 }
                 //player collides with rock
                 for (int a = 0; a < ROCKS; a++){

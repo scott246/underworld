@@ -14,7 +14,7 @@ import static javaapplication1.Game.yframe;
  */
 public class Player {
     static int size = 20;
-    static int hp = 20;
+    static int hp = 30;
     static int minDamage = 1;
     static int maxDamage = 7;
     static int x = Game.roundLocation(xframe/2, size);
