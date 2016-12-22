@@ -38,26 +38,42 @@ import java.time.format.DateTimeFormatter;
 
 @SuppressWarnings("serial")
 public class Game extends JPanel {
+    //time variables
     static long startTime = 0;
     static long pauseTime = 0;
     static long startPauseTime = 0;
+    
+    //enemy variables
     static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
+    
+    //rock variables
     static int ROCKS = (int)2000;
     static Rock[] rockList = new Rock[ROCKS];
+    
+    //powerup variables
     static int POWERUPS = (int)200;
     static Powerup[] powerupList = new Powerup[POWERUPS];
+    
+    //store
     static Store store = new Store();
+    
+    //arrow (one at a time for now)
     static Arrow arrow;
+    
+    //screen dimensions
     static final int xframe = 800;
     static final int yframe = 600;
+    
+    //game variables
     static int level = 0;
-    static private AtomicBoolean paused;
-    static private AtomicBoolean gameOver;
-    static private Thread thread;
-    static boolean instructionDisplay = false;
     static int enemiesKilled = 0;
-    static int gameID = 1;
+    static public AtomicBoolean paused;
+    static public AtomicBoolean gameOver;
+    static public Thread thread;
+    static boolean instructionDisplay = false;
+    
+    //high score variables
     static int highScore = 0;
     static int secondHigh = 0;
     static int thirdHigh = 0;
@@ -67,7 +83,10 @@ public class Game extends JPanel {
         gameOver = new AtomicBoolean(false);
     }
     
-    public static void connect() {
+    /**
+     * Connect via JDBC to SQLite database for high score keeping
+     */
+    public static void connectToDB() {
         Connection conn = null;
         try {
             // db parameters
@@ -97,11 +116,16 @@ public class Game extends JPanel {
         }
     }
     
+    /**
+     * Add score to the database
+     * @param score
+     */
     public static void addScore(int score) {
         Connection conn = null;
         try {
             //get current date
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(
+                    "yyyy-MM-dd HH:mm:ss");
             LocalDateTime now = LocalDateTime.now();
             System.out.println(dtf.format(now)); //2016/11/16 12:08:43
             // db parameters
@@ -118,8 +142,12 @@ public class Game extends JPanel {
             e.printStackTrace();
         }
     }
-    
-    //get nth highest score
+
+    /**
+     * Get nth highest score from database
+     * @param n
+     * @return nth highest score
+     */
     public static int getHighScore(int n){
         Connection conn = null;
         try {
@@ -145,8 +173,363 @@ public class Game extends JPanel {
             return 0;
         }
     }
+
+    /**
+     * Helper function to enforce a grid layout. Takes n and rounds it to the 
+     * nearest size
+     * @param n
+     * @param size
+     * @return
+     */
+    public static int roundLocation(int n, int size) {
+        return (n + size-1) / size * size;
+    }
+
+    /**
+     * Generates a map, border, and powerups
+     * Algorithm: 
+     *      generates a random power based on density
+     *      takes that power and goes down the y axis until that power is reached
+     *      places a rock, generates new power
+     *      continue until you reach the bottom of the page, then increment x
+     *      continue until you reach the bottom right edge of the screen
+     */
+    public static void generateMap() {
+        //density of rocks (lower = more dense)
+        double densityMultiplier = 3;
+        
+        //density of powerups (lower = less dense)
+        double powerupFrequency = .03;
+        int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
+        int rockCount = 0;
+        int powerupCount = 0;
+        for (int a = 0; a < xframe; a+=Rock.size) {
+            for (int b = 0; b < yframe; b+=Rock.size) {
+                while(power > 0) {
+                    
+                    //use the rocks to generate a border
+                    if (a == 0 || b == Rock.size || b == Rock.size * 2 ||
+                        b == 0 || 
+                        a == roundLocation(xframe, Rock.size)-Rock.size ||
+                        a == roundLocation(xframe, Rock.size) ||
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
+                        b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
+                        b == roundLocation(yframe, Rock.size)) {
+                        rockList[rockCount] = new Rock();
+                        rockList[rockCount].setX(roundLocation(a, Rock.size));
+                        rockList[rockCount].setY(roundLocation(b, Rock.size)); 
+                        if (rockCount++ >= ROCKS-1) {
+                            return;
+                        }
+                    }
+                    
+                    //generate powerups
+                    if (Math.random() < powerupFrequency) {
+                        if (powerupCount <= POWERUPS-1) {
+                            powerupList[powerupCount] = new Powerup();
+                            powerupList[powerupCount].setX(roundLocation(
+                                    a, Powerup.size));
+                            powerupList[powerupCount].setY(roundLocation(
+                                    b, Powerup.size));
+                            powerupList[powerupCount].setType(Math.random());
+//                            //ensure powerups don't spawn in unreachable spots
+//                            //  (i.e. spots with rocks surrounding all sides)
+//                            boolean up = false;
+//                            boolean left = false;
+//                            boolean down = false;
+//                            boolean right = false;
+//                            for (int c = 0; c < ROCKS; b++){
+//                                if (powerupList[powerupCount].getX() + 
+//                                        powerupList[powerupCount].getSize() == 
+//                                        rockList[c].getX()) 
+//                                    right = true;
+//                                if (powerupList[powerupCount].getX() - 
+//                                        powerupList[powerupCount].getSize() == 
+//                                        rockList[c].getX())  
+//                                    left = true;
+//                                if (powerupList[powerupCount].getY() + 
+//                                        powerupList[powerupCount].getSize() == 
+//                                        rockList[c].getY())  
+//                                    up = true;
+//                                if (powerupList[powerupCount].getY() - 
+//                                        powerupList[powerupCount].getSize() == 
+//                                        rockList[c].getY())  
+//                                    down = true;
+//                            }
+//                            if (up && left && down && right) {
+//                                powerupList[powerupCount].setY(
+//                                        powerupList[powerupCount].getY() + 
+//                                        powerupList[powerupCount].getSize()*2);
+//                            }
+                            if (powerupCount++ >= POWERUPS-1) {
+                                powerupCount--;
+                            }
+                        }
+                    }
+                    b += 20;
+                    power--;
+                }
+                
+                //avoid having rocks spawn on player
+                if (roundLocation(a, Rock.size) == Player.x &&
+                        roundLocation(b, Rock.size) == Player.y) {
+                    b -= Rock.size;
+                }
+                
+                //make the rock
+                rockList[rockCount] = new Rock();
+                rockList[rockCount].setX(roundLocation(a, Rock.size));
+                rockList[rockCount].setY(roundLocation(b, Rock.size));
+                if (rockCount++ >= ROCKS-1) {
+                    return;
+                }
+                
+                //generate new power and start over
+                power = (int)Math.ceil(
+                        (Math.random() + Math.random()) * densityMultiplier);
+            }
+        }
+        ROCKS = rockCount;
+        POWERUPS = powerupCount;
+    }
     
-    //very basic graphics
+    /**
+     * Used to calculate time alive for the HUD
+     * @return time alive
+     */
+    public static double getTimeAlive(){
+        return System.currentTimeMillis() - startTime - pauseTime;
+    }
+
+    /**
+     * Spawns bad guys in the map
+     */
+    public static void generateEnemies() {
+        for (int a = 0; a < ENEMIES; a++){            
+            Enemy e = new Enemy();
+            
+            //generate a random x and y variable
+            int tempX = roundLocation(
+                    (int) (Math.random() * xframe - e.getSize() * 3),
+                    e.getSize());
+            int tempY = roundLocation(
+                    (int) (Math.random() * yframe - e.getSize() * 4),
+                    e.getSize());
+            
+            //ensure enemies don't spawn on player
+            if (tempX == Player.x && tempY == Player.y) {
+                tempX += e.getSize();
+                tempY += e.getSize();
+            }
+            
+//            //ensure enemies don't spawn in unreachable spots
+//            //  (i.e. spots with rocks surrounding all sides)
+//            boolean up = false;
+//            boolean left = false;
+//            boolean down = false;
+//            boolean right = false;
+//            for (int b = 0; b < ROCKS; b++){
+//                if (tempX + e.getSize() == rockList[b].getX()) right = true;
+//                if (tempX - e.getSize() == rockList[b].getX()) left = true;
+//                if (tempY + e.getSize() == rockList[b].getY()) up = true;
+//                if (tempY - e.getSize() == rockList[b].getY()) down = true;
+//            }
+//            if (up && left && down && right) {
+//                tempX = Player.x + e.getSize() * 2;
+//                tempY = Player.y + e.getSize() * 2;
+//            }
+            
+            
+            //set enemy properties
+            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level))));
+            e.setX(tempX);
+            e.setY(tempY);
+            e.setLastDir(0);
+            enemyList[a] = e; 
+            System.out.println("Enemy "+a+" created at ("+e.getX()+","+e.getY()+")");
+        }
+    }
+
+    /**
+     * Basic collision detection system.
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @return
+     */
+    public static boolean collisionDetect(int x1, int y1, int x2, int y2){
+        return (x1 == x2 && y1 == y2);
+    }
+
+    /**
+     * Initiates the basic AI system
+     */
+    public static void initAI(){
+        if (!gameOver.get()){
+            for (int a = 0; a < ENEMIES; a++){
+                
+                //uses a random number to decide which way the enemy goes
+                double temp = Math.random();
+                
+                //go left
+                if (temp < .25 && 
+                        enemyList[a].getX()-enemyList[a].getSize() >= 0 &&
+                        enemyList[a].getX()-enemyList[a].getSize() != Store.x) {
+                    enemyList[a].setX(
+                            enemyList[a].getX()-enemyList[a].getSize());
+                    enemyList[a].setLastDir(2); //left
+                }
+                
+                //go right
+                else if (temp < .5 && temp >= .25 && 
+                        enemyList[a].getX()+enemyList[a].getSize() < xframe &&
+                        enemyList[a].getX()+enemyList[a].getSize() != Store.x) {
+                    enemyList[a].setX(
+                            enemyList[a].getX()+enemyList[a].getSize());
+                    enemyList[a].setLastDir(4); //right
+                }
+                
+                //go up
+                if (temp < .75 && temp >= .5 && 
+                        enemyList[a].getY()-enemyList[a].getSize() >= 0 &&
+                        enemyList[a].getY()-enemyList[a].getSize() != Store.y) {
+                    enemyList[a].setY(
+                            enemyList[a].getY()-enemyList[a].getSize());
+                    enemyList[a].setLastDir(1); //up
+                }
+                
+                //go down
+                else if (temp < 1 && temp >= .75 && 
+                        enemyList[a].getY()+enemyList[a].getSize() < yframe &&
+                        enemyList[a].getY()+enemyList[a].getSize() != Store.y) {
+                    enemyList[a].setY(
+                            enemyList[a].getY()+enemyList[a].getSize());
+                    enemyList[a].setLastDir(3); //down
+                }
+            }
+        }
+    }
+    
+    /**
+     * Allows a basic arrow shooting animation by having the arrow move 
+     * according to its speed variable once every game loop iteration.
+     */
+    public static void animateArrowShot(){
+        switch(Arrow.dir){
+            case 1: //up
+                Arrow.y = Arrow.y-Arrow.speed; break;
+            case 2: //left
+                Arrow.x = Arrow.x-Arrow.speed; break;
+            case 3: //down
+                Arrow.y = Arrow.y+Arrow.speed; break;
+            case 4: //right
+                Arrow.x = Arrow.x+Arrow.speed; break;
+        }
+        
+        //once the arrow hits a rock, the arrow is gone
+        for (int a = 0; a < ROCKS; a++){
+            if (rockList[a].getX() == Arrow.x &&
+                rockList[a].getY() == Arrow.y) {
+                Arrow.exists = false;
+                Arrow.x = -Arrow.size;
+                Arrow.y = -Arrow.size;
+            }
+        }
+        
+        //once the arrow hits an enemy, the arrow is gone
+        for (int a = 0; a < ENEMIES; a++){
+            if (enemyList[a].getX() == Arrow.x &&
+                enemyList[a].getY() == Arrow.y) {
+                Arrow.exists = false;
+                Arrow.x = -Arrow.size;
+                Arrow.y = -Arrow.size;
+            }
+        }
+    }
+    
+    /**
+     * Changes the entire game screen to move on to the next level.
+     * @param g
+     * @param f
+     * @throws IOException
+     */
+    public static void nextLevel(Game g, JFrame f) throws IOException {
+        f.add(g);
+        f.setSize(xframe, yframe);
+        f.setResizable(false);
+        f.setVisible(true);
+        f.setPreferredSize(new Dimension(xframe, Rock.size));
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        level++;
+    }
+    
+    /**
+     * Used to calculate which enemies will be damaged when attack magic
+     * (destroying everything in a 3 block radius) is used.
+     * @return enemies to be damaged
+     */
+    public static Enemy[] getEnemiesIn3BlockRadius() {
+        Enemy[] enemies = new Enemy[50];
+        int enemyCount = 0;
+        for (int a = 0; a < ENEMIES; a++) {
+            if (enemyList[a].getX() >= Player.x - 3*Player.size && 
+                enemyList[a].getX() <= Player.x + 3*Player.size &&
+                enemyList[a].getY() >= Player.y - 3*Player.size &&
+                enemyList[a].getY() <= Player.y + 3*Player.size){
+                enemies[enemyCount] = enemyList[a];
+                enemyCount++;
+            }
+        }
+        return enemies;
+    }
+    
+    //used to calculate what the arrow will hit
+
+    /**
+     * Used to calculate which enemy will be damaged when an arrow is shot at 
+     * it.
+     * @param dir
+     * @return enemy to be damaged
+     */
+    public static Enemy getEnemyInDirection(int dir) {
+        int arrowx = Player.x;
+        int arrowy = Player.y;
+        boolean hitRock = false;
+        while (!hitRock) {
+            for (int a = 0; a < ROCKS; a++){
+                if (rockList[a].getX() == arrowx &&
+                    rockList[a].getY() == arrowy) {
+                    hitRock = true;
+                }
+            }
+            for (int b = 0; b < ENEMIES; b++) {
+                if (enemyList[b].getX() == arrowx &&
+                    enemyList[b].getY() == arrowy){
+                    return enemyList[b];
+                }
+            }
+            switch (dir) {
+                case 1://up
+                    arrowy-=Player.size; break;
+                case 2://left
+                    arrowx-=Player.size; break;
+                case 3://down
+                    arrowy+=Player.size; break;
+                case 4://right
+                    arrowx+=Player.size; break;
+                default:
+                    return null; //invalid input
+            }
+        }
+        return null; //hit a rock or the end of the screen
+    }
+
+    /**
+     * All the graphics for the game are 2D Graphics for now. This is the method
+     * that draws them.
+     * @param g 
+     */
     @Override
     public void paint(Graphics g) {
         super.paint(g);        
@@ -164,9 +547,17 @@ public class Game extends JPanel {
                 Graphics2D enemy = (Graphics2D) g;
                 enemy.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
-                enemy.fillRect(enemyList[a].getX(), enemyList[a].getY(), enemyList[a].getSize(), enemyList[a].getSize());
+                System.out.println("Making enemy "+a+"...");
+                enemy.fillRect(
+                        enemyList[a].getX(),
+                        enemyList[a].getY(),
+                        enemyList[a].getSize(),
+                        enemyList[a].getSize());
                 g.setColor(Color.BLACK);
-                enemy.drawString(Integer.toString(enemyList[a].getHP()), enemyList[a].getX(), enemyList[a].getY()+enemyList[a].getSize()/2);
+                enemy.drawString(
+                        Integer.toString(enemyList[a].getHP()), 
+                        enemyList[a].getX(), 
+                        enemyList[a].getY()+enemyList[a].getSize()/2);
         }
         
         //draw powerups
@@ -175,9 +566,16 @@ public class Game extends JPanel {
             Graphics2D powerup = (Graphics2D) g;
             powerup.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            powerup.fillRect(powerupList[a].getX(), powerupList[a].getY(), powerupList[a].getSize(), powerupList[a].getSize());
+            powerup.fillRect(
+                    powerupList[a].getX(), 
+                    powerupList[a].getY(), 
+                    powerupList[a].getSize(), 
+                    powerupList[a].getSize());
             g.setColor(Color.BLACK);
-            powerup.drawString(powerupList[a].getTypeString(), powerupList[a].getX(), powerupList[a].getY()+Powerup.size/2);
+            powerup.drawString(
+                    powerupList[a].getTypeString(), 
+                    powerupList[a].getX(), 
+                    powerupList[a].getY()+Powerup.size/2);
         }
         
         //draw store
@@ -201,7 +599,8 @@ public class Game extends JPanel {
             RenderingHints.VALUE_ANTIALIAS_ON);
         player1.fillOval(Player.x, Player.y, Player.size, Player.size);
         g.setColor(Color.LIGHT_GRAY);
-        player1.drawString(Integer.toString(Player.hp), Player.x, Player.y+Player.size/2);
+        player1.drawString(
+                Integer.toString(Player.hp), Player.x, Player.y+Player.size/2);
         
         //draw rocks
         for(int b = 0; b < ROCKS; b++){
@@ -209,7 +608,11 @@ public class Game extends JPanel {
             Graphics2D rock = (Graphics2D) g;
             rock.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-            rock.fillRect(rockList[b].getX(), rockList[b].getY(), rockList[b].getSize(), rockList[b].getSize());
+            rock.fillRect(
+                    rockList[b].getX(), 
+                    rockList[b].getY(), 
+                    rockList[b].getSize(), 
+                    rockList[b].getSize());
         }
         
         //draw all text
@@ -219,7 +622,9 @@ public class Game extends JPanel {
             RenderingHints.VALUE_ANTIALIAS_ON);
         //alive time
         text.setFont(new Font("Courier New", Font.BOLD, 16));
-        text.drawString("Time Alive: "+ Integer.toString((int)(getTimeAlive()/1000)), 10, 15);
+        String aliveTime = "Time Alive: "+ Integer.toString(
+                (int)(getTimeAlive()/1000));
+        text.drawString(aliveTime, 10, 15);
         //gold
         g.setColor(Color.YELLOW);
         text.drawString("Gold: "+Player.gp, 10, 30);
@@ -276,14 +681,17 @@ public class Game extends JPanel {
         g.setColor(Color.LIGHT_GRAY);
         FontMetrics m7 = g.getFontMetrics(g.getFont());
         String etext = "Enemies Killed: " + enemiesKilled;
-        text.drawString(etext, xframe - Rock.size - m7.stringWidth(etext), yframe-m7.getHeight() * 2);
+        int etextx = xframe - Rock.size - m7.stringWidth(etext);
+        int etexty = yframe-m7.getHeight() * 2;
+        text.drawString(etext, etextx, etexty);
         //pause screen
         g.setColor(Color.WHITE);
         if (paused.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "PAUSED";
             int ptextx = (xframe - metrics.stringWidth(text1))/2;
-            int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
+            int ptexty = ((yframe - metrics.getHeight())/2)
+                    + metrics.getAscent();
             text.drawString(text1, ptextx, ptexty);
         }
         //game over screen
@@ -301,12 +709,18 @@ public class Game extends JPanel {
             int ptextx4 = (xframe - metrics.stringWidth(text4))/2;
             int ptextx5 = (xframe - metrics.stringWidth(text5))/2;
             int ptextx6 = (xframe - metrics.stringWidth(text6))/2;
-            int ptexty = ((yframe - metrics.getHeight())/2) + metrics.getAscent();
-            int ptexty2 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
-            int ptexty3 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
-            int ptexty4 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 5;
-            int ptexty5 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 6;
-            int ptexty6 = ((yframe - metrics.getHeight())/2) + metrics.getAscent() * 7;
+            int ptexty = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent();
+            int ptexty2 = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
+            int ptexty3 = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
+            int ptexty4 = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 5;
+            int ptexty5 = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 6;
+            int ptexty6 = (
+                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 7;
             text.drawString(text1, ptextx, ptexty);
             text.drawString(text2, ptextx2, ptexty2);
             text.drawString(text3, ptextx3, ptexty3);
@@ -321,16 +735,23 @@ public class Game extends JPanel {
             String storeMenu = "==STORE==\n"
                     + "[1] Buy HP: "+Store.hpPrice+" Gold\n"
                     + "[2] Buy Mana: "+Store.manaPrice+" Gold\n"
-                    + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+" Gold\n"
-                    + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+" Gold\n"
-                    + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+" Gold\n"
-                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+" Gold\n"
+                    + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+
+                    " Gold\n"
+                    + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+
+                    " Gold\n"
+                    + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+
+                    " Gold\n"
+                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+
+                    " Gold\n"
                     + "[7] Buy a Bow: "+Store.bowPrice+" Gold\n"
                     + "[8] Buy +1 Arrows: "+Store.arrowPrice+" Gold\n";
             int xtextx = xframe/2;
             int ytexty = yframe/2 + text.getFontMetrics().getHeight();
             for (String line : storeMenu.split("\n")) {
-                text.drawString(line, xtextx, ytexty+=text.getFontMetrics().getHeight());
+                text.drawString(
+                        line, 
+                        xtextx, 
+                        ytexty+=text.getFontMetrics().getHeight());
             }
         }
         //instructions screen
@@ -348,7 +769,8 @@ public class Game extends JPanel {
                     + "[q]     toggle instructions\n"
                     + "        don't worry, the game is paused\n"
                     + "[n]     use attack magic\n"
-                    + "        every enemy in a 3 block radius takes your max damage\n"
+                    + "        every enemy in a 3 block radius takes your max "
+                    + "damage\n"
                     + "        requires 20 mana to use\n"
                     + "[m]     use defense magic\n"
                     + "        increases your health by (30*your_level)\n"
@@ -358,279 +780,45 @@ public class Game extends JPanel {
                     + "==ENTITIES==\n"
                     + "Red     enemy\n"
                     + "        attack by bumping into them\n"
-                    + "        both will take a random amount damage based on level and enemy's health\n"
+                    + "        both will take a random amount damage based on "
+                    + "level and enemy's health\n"
                     + "Blue    your player model\n"
                     + "Green   store\n"
                     + "        purchase items that increase your stats\n"
-                    + "        enemies can't attack you while you're in the store\n"
+                    + "        enemies can't attack you while you're in the "
+                    + "store\n"
                     + "Yellow  powerup which increases various stats\n"
                     + "        increases stats based on player level\n"
-                    + "        M = mana, H = health, - = minimum attack, + = maximum attack, G = gold\n"
+                    + "        M = mana, H = health, - = minimum attack, + = "
+                    + "maximum attack, G = gold\n"
                     + "==GAMEPLAY==\n"
-                    + "Navigate through the dungeon, kill all the enemies to get to the next level,\n"
-                    + "get through as many levels as possible before you inevitably die.";
+                    + "Navigate through the dungeon, kill all the enemies to get"
+                    + " to the next level,\n"
+                    + "get through as many levels as possible before you "
+                    + "inevitably die.";
             int y = Rock.size * 3;
             for (String line : instructions.split("\n")) {
                 text.drawString(line, 10, y+=text.getFontMetrics().getHeight());
             }
             String returntext = "==PRESS [q] TO RETURN TO THE GAME==";
-            text.drawString(returntext, (xframe - text.getFontMetrics().stringWidth(returntext))/2, y+=text.getFontMetrics().getHeight());
+            text.drawString(
+                    returntext, 
+                    (xframe - text.getFontMetrics().stringWidth(returntext))/2, 
+                    y+=text.getFontMetrics().getHeight());
         }
         
         else if (!instructionDisplay) {
             text.setFont(new Font("Courier New", Font.BOLD, 16));
             instructions = "Press [q] to display instructions";
-            text.drawString(instructions, 10, yframe - text.getFontMetrics().getHeight() * 2);
+            long yinst = yframe - text.getFontMetrics().getHeight() * 2l;
+            text.drawString(instructions, 10, yinst);
         }
     }
     
-    //helper function to enforce a grid layout
-    public static int roundLocation(int n, int size) {
-        return (n + size-1) / size * size;
-    }
-    
-    //makes the map, border, and powerups
-    public static void generateMap() {
-        double densityMultiplier = 3;
-        double powerupFrequency = .03;
-        int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
-        int rockCount = 0;
-        int powerupCount = 0;
-        for (int a = 0; a < xframe; a+=Rock.size) {
-            for (int b = 0; b < yframe; b+=Rock.size) {
-                while(power > 0) {
-                    //generate border
-                    if (a == 0 || b == Rock.size || b == Rock.size * 2 ||
-                        b == 0 || 
-                        a == roundLocation(xframe, Rock.size)-Rock.size ||
-                        a == roundLocation(xframe, Rock.size) ||
-                        b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
-                        b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
-                        b == roundLocation(yframe, Rock.size)) {
-                        rockList[rockCount] = new Rock();
-                        rockList[rockCount].setX(roundLocation(a, Rock.size));
-                        rockList[rockCount].setY(roundLocation(b, Rock.size)); 
-                        if (rockCount++ >= ROCKS-1) {
-                            return;
-                        }
-                    }
-                    //generate powerups
-                    if (Math.random() < powerupFrequency) {
-                        if (powerupCount <= POWERUPS-1) {
-                            powerupList[powerupCount] = new Powerup();
-                            powerupList[powerupCount].setX(roundLocation(a, Powerup.size));
-                            powerupList[powerupCount].setY(roundLocation(b, Powerup.size));
-                            powerupList[powerupCount].setType(Math.random());
-                            if (powerupCount++ >= POWERUPS-1) {
-                                powerupCount--;
-                            }
-                        }
-                    }
-                    b += 20;
-                    power--;
-                }
-                if (a == Player.x && b == Player.y) { //rock would spawn on Player
-                    b += Rock.size * 2;
-                }
-                rockList[rockCount] = new Rock();
-                rockList[rockCount].setX(roundLocation(a, Rock.size));
-                rockList[rockCount].setY(roundLocation(b, Rock.size));
-                if (rockCount++ >= ROCKS-1) {
-                    return;
-                }
-                power = (int)Math.ceil((Math.random() + Math.random()) * densityMultiplier);
-            }
-        }
-        ROCKS = rockCount;
-        POWERUPS = powerupCount;
-        //generate store
-        int storex = Player.x;//(roundLocation((int)(Math.random() * xframe - store.size * 2), store.size));
-        int storey = Player.y;//(roundLocation((int)(Math.random() * yframe - store.size * 3), store.size));
-//        for (int a = 0; a < ROCKS; a++) {
-//            if (storex == rockList[a].getX() && storey == rockList[a].getY()){
-//                storex += store.size; storey += store.size;
-//            }
-//        }
-        store.setX(storex);
-        store.setY(storey);
-    }
-    
-    //used to calculate time alive for HUD
-    public static double getTimeAlive(){
-        return System.currentTimeMillis() - startTime - pauseTime;
-    }
-    
-    //makes bad guys
-    public static void generateEnemies() {
-        for (int a = 0; a < ENEMIES; a++){            
-            Enemy e = new Enemy();
-            int tempX = (int) (Math.random() * xframe - e.getSize() * 3);
-            int tempY = (int) (Math.random() * yframe - e.getSize() * 4);
-            //ensure enemies don't spawn on player
-            if (tempX == Player.x && tempY == Player.y) {
-                tempX += e.getSize() * 5;
-                tempY += e.getSize() * 3;
-            }
-            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level))));
-            e.setX(roundLocation(tempX, e.getSize()));
-            e.setY(roundLocation(tempY, e.getSize()));
-            e.setLastDir(0);
-            enemyList[a] = e; 
-        }
-    }
-    
-    //basic collision detection system
-    public static boolean collisionDetect(int x1, int y1, int x2, int y2){
-        return (x1 == x2 && y1 == y2);
-    }
-   
-    //allows the bad guys to wander around
-    public static void initAI(){
-        if (!gameOver.get()){
-            for (int a = 0; a < ENEMIES; a++){
-                double temp = Math.random(); //uses a random number to calculate which way to go
-                //go left
-                if (temp < .25 && 
-                        enemyList[a].getX()-enemyList[a].getSize() >= 0 &&
-                        enemyList[a].getX()-enemyList[a].getSize() != Store.x) {
-                    enemyList[a].setX(enemyList[a].getX()-enemyList[a].getSize());
-                    enemyList[a].setLastDir(2); //left
-                }
-                //go right
-                else if (temp < .5 && temp >= .25 && 
-                        enemyList[a].getX()+enemyList[a].getSize() < xframe &&
-                        enemyList[a].getX()+enemyList[a].getSize() != Store.x) {
-                    enemyList[a].setX(enemyList[a].getX()+enemyList[a].getSize());
-                    enemyList[a].setLastDir(4); //right
-                }
-                //go up
-                if (temp < .75 && temp >= .5 && 
-                        enemyList[a].getY()-enemyList[a].getSize() >= 0 &&
-                        enemyList[a].getY()-enemyList[a].getSize() != Store.y) {
-                    enemyList[a].setY(enemyList[a].getY()-enemyList[a].getSize());
-                    enemyList[a].setLastDir(1); //up
-                }
-                //go down
-                else if (temp < 1 && temp >= .75 && 
-                        enemyList[a].getY()+enemyList[a].getSize() < yframe &&
-                        enemyList[a].getY()+enemyList[a].getSize() != Store.y) {
-                    enemyList[a].setY(enemyList[a].getY()+enemyList[a].getSize());
-                    enemyList[a].setLastDir(3); //down
-                }
-            }
-        }
-    }
-    
-    public static void animateArrowShot(){
-        switch(Arrow.dir){
-            case 1: //up
-                Arrow.y = Arrow.y-Arrow.speed; break;
-            case 2: //left
-                Arrow.x = Arrow.x-Arrow.speed; break;
-            case 3: //down
-                Arrow.y = Arrow.y+Arrow.speed; break;
-            case 4: //right
-                Arrow.x = Arrow.x+Arrow.speed; break;
-        }
-        for (int a = 0; a < ROCKS; a++){
-            if (rockList[a].getX() == Arrow.x &&
-                rockList[a].getY() == Arrow.y) {
-                Arrow.exists = false;
-                Arrow.x = -Arrow.size;
-                Arrow.y = -Arrow.size;
-            }
-        }
-        for (int a = 0; a < ENEMIES; a++){
-            if (enemyList[a].getX() == Arrow.x &&
-                enemyList[a].getY() == Arrow.y) {
-                Arrow.exists = false;
-                Arrow.x = -Arrow.size;
-                Arrow.y = -Arrow.size;
-            }
-        }
-    }
-    
-    public static void knockback(int lastDir, int size, int x, int y) {
-        switch(lastDir){
-            case 1: //up
-                y += size;
-                break;
-            case 2: //left
-                x += size;
-                break;
-            case 3: //down
-                y -= size;
-                break;
-            case 4: //right
-                x -= size;
-                break;
-            default:
-                break;
-        }
-    }
-    
-    public static void nextLevel(Game g, JFrame f) throws IOException {
-        f.add(g);
-        f.setSize(xframe, yframe);
-        f.setResizable(false);
-        f.setVisible(true);
-        f.setPreferredSize(new Dimension(xframe, Rock.size));
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        level++;
-    }
-    
-    public static Enemy[] getEnemiesIn3BlockRadius() {
-        Enemy[] enemies = new Enemy[50];
-        int enemyCount = 0;
-        for (int a = 0; a < ENEMIES; a++) {
-            if (enemyList[a].getX() >= Player.x - 3*Player.size && 
-                enemyList[a].getX() <= Player.x + 3*Player.size &&
-                enemyList[a].getY() >= Player.y - 3*Player.size &&
-                enemyList[a].getY() <= Player.y + 3*Player.size){
-                enemies[enemyCount] = enemyList[a];
-                enemyCount++;
-            }
-        }
-        return enemies;
-    }
-    
-    //used to calculate what the arrow will hit
-    public static Enemy getEnemyInDirection(int dir) {
-        int arrowx = Player.x;
-        int arrowy = Player.y;
-        boolean hitRock = false;
-        while (!hitRock) {
-            for (int a = 0; a < ROCKS; a++){
-                if (rockList[a].getX() == arrowx &&
-                    rockList[a].getY() == arrowy) {
-                    hitRock = true;
-                }
-            }
-            for (int b = 0; b < ENEMIES; b++) {
-                if (enemyList[b].getX() == arrowx &&
-                    enemyList[b].getY() == arrowy){
-                    return enemyList[b];
-                }
-            }
-            switch (dir) {
-                case 1://up
-                    arrowy-=Player.size; break;
-                case 2://left
-                    arrowx-=Player.size; break;
-                case 3://down
-                    arrowy+=Player.size; break;
-                case 4://right
-                    arrowx+=Player.size; break;
-                default:
-                    return null; //invalid input
-            }
-        }
-        return null; //hit a rock or the end of the screen
-    }
-
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) 
+            throws InterruptedException, IOException {
         startTime = System.currentTimeMillis();
-        connect();
+        connectToDB();
         JFrame frame = new JFrame("Dungeon Game"); 
         
         frame.addKeyListener(new KeyListener() {
@@ -641,248 +829,8 @@ public class Game extends JPanel {
             @Override
             //KEY BINDINGS
             public void keyPressed(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    //w = move up
-                    case KeyEvent.VK_W:
-                        if (!paused.get() && !gameOver.get()) {
-                            Player.lastDir = 1;
-                            Player.movePlayerUp();
-                        }
-                        break;
-                    //a = move left
-                    case KeyEvent.VK_A:
-                        if (!paused.get() && !gameOver.get()) {
-                            Player.lastDir = 2;
-                            Player.movePlayerLeft();
-                        }
-                        break;
-                    //s = move down
-                    case KeyEvent.VK_S:
-                        if (!paused.get() && !gameOver.get()) {
-                            Player.lastDir = 3;
-                            Player.movePlayerDown();
-                        }
-                        break;
-                    //d = move right
-                    case KeyEvent.VK_D:
-                        if (!paused.get() && !gameOver.get()) {
-                            Player.lastDir = 4;
-                            Player.movePlayerRight();
-                        }
-                        break;
-                    //i = display instructions
-                    case KeyEvent.VK_Q:
-                        if (!paused.get()){
-                            paused.set(true);
-                        }
-                        else {
-                            paused.set(false);
-                            synchronized(thread){
-                               thread.notify(); 
-                            }
-                        }
-                        if (!instructionDisplay) instructionDisplay = true;
-                        else if (instructionDisplay) instructionDisplay = false;
-                        break;
-                    //r = restart game
-                    case KeyEvent.VK_R:
-                        level = 1;
-                        generateEnemies();
-                        generateMap();
-                        gameOver.set(false);
-                        startTime = System.currentTimeMillis();
-                        pauseTime = 0;
-                        Player.resetPlayer();
-                        gameID++;
-                        
-                    //j = use attack magic
-                    case KeyEvent.VK_N:
-                        if (Player.mana >= 20) {
-                            Enemy[] enemies = getEnemiesIn3BlockRadius();
-                            for (Enemy enemy : enemies){
-                                if (enemy != null) {
-                                    enemy.setHP(enemy.getHP() - Player.maxDamage);
-                                    if (enemy.getHP() <= 0) {
-                                        enemy.setX(-enemy.getSize());
-                                        enemy.setY(-enemy.getSize());
-                                        Player.hp += Math.ceil(Math.random() * (10 * level));
-                                        Player.gp += Math.ceil(Math.random() * level);
-                                    }
-                                }
-                            }
-                            Player.mana -= 20;
-                        }
-                        break;
-                    //k = use defense magic
-                    case KeyEvent.VK_M:
-                        if (Player.mana >= 10 && Player.defenseMagic >= 1) {
-                            Player.hp += (30 * level);
-                            Player.mana -= 10;
-                            Player.defenseMagic -= 1;
-                        }
-                        break;
-                    //i = shoot arrow up
-                    case KeyEvent.VK_I:
-                        if (Player.bow && Player.arrows >= 1) {
-                            if (!Arrow.exists){
-                                Arrow.dir = 1; Arrow.exists = true;
-                                Arrow.x = Player.x; Arrow.y = Player.y;
-                            }
-                            Enemy enemy = getEnemyInDirection(1);
-                            if (enemy != null) {
-                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
-                                if (enemy.getHP() <= 0) {
-                                    enemy.setX(-enemy.getSize());
-                                    enemy.setY(-enemy.getSize());
-                                    Player.hp += Math.ceil(Math.random() * (10 * level));
-                                    Player.gp += Math.ceil(Math.random() * level);
-                                }
-                            }
-                            Player.arrows--;
-                        }
-                        break;
-                    //j = shoot arrow left
-                    case KeyEvent.VK_J:
-                        if (Player.bow && Player.arrows >= 1) {
-                            if (!Arrow.exists){
-                                Arrow.dir = 2; Arrow.exists = true;
-                                Arrow.x = Player.x; Arrow.y = Player.y;
-                            }
-                            Enemy enemy = getEnemyInDirection(2);
-                            if (enemy != null) {
-                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
-                                if (enemy.getHP() <= 0) {
-                                    enemy.setX(-enemy.getSize());
-                                    enemy.setY(-enemy.getSize());
-                                    Player.hp += Math.ceil(Math.random() * (10 * level));
-                                    Player.gp += Math.ceil(Math.random() * level);
-                                }
-                            }
-                            Player.arrows--;
-                            
-                        }
-                        break;
-                    //k = shoot arrow down
-                    case KeyEvent.VK_K:
-                        if (Player.bow && Player.arrows >= 1) {
-                            if (!Arrow.exists){
-                                Arrow.dir = 3; Arrow.exists = true;
-                                Arrow.x = Player.x; Arrow.y = Player.y;
-                            }
-                            Enemy enemy = getEnemyInDirection(3);
-                            if (enemy != null) {
-                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
-                                if (enemy.getHP() <= 0) {
-                                    enemy.setX(-enemy.getSize());
-                                    enemy.setY(-enemy.getSize());
-                                    Player.hp += Math.ceil(Math.random() * (10 * level));
-                                    Player.gp += Math.ceil(Math.random() * level);
-                                }
-                            }
-                            Player.arrows--;
-                        }
-                        break;
-                    //l = shoot arrow right
-                    case KeyEvent.VK_L:
-                        if (Player.bow && Player.arrows >= 1) {
-                            if (!Arrow.exists){
-                                Arrow.dir = 4; Arrow.exists = true;
-                                Arrow.x = Player.x; Arrow.y = Player.y;
-                            }
-                            Enemy enemy = getEnemyInDirection(4);
-                            if (enemy != null) {
-                                enemy.setHP(enemy.getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
-                                if (enemy.getHP() <= 0) {
-                                    enemy.setX(-enemy.getSize());
-                                    enemy.setY(-enemy.getSize());
-                                    Player.hp += Math.ceil(Math.random() * (10 * level));
-                                    Player.gp += Math.ceil(Math.random() * level);
-                                }
-                            }
-                            Player.arrows--;
-                        }
-                        break;
-                        
-                    case KeyEvent.VK_1: //buy 1 hp if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.hpPrice) {
-                                Player.gp -= Store.hpPrice;
-                                Player.hp += (2*level);
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_2: //buy 1 mana if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.manaPrice) {
-                                Player.gp -= Store.manaPrice;
-                                Player.mana += (2*level);
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_3: //buy 1 mindamage if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.minDamagePrice) {
-                                Player.gp -= Store.minDamagePrice;
-                                if (Player.minDamage++ > Player.maxDamage) Player.maxDamage++;
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_4: //buy 1 maxdamage if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.maxDamagePrice) {
-                                Player.gp -= Store.maxDamagePrice;
-                                Player.maxDamage += 1;
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_5: //buy 1 attackmagic if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.attackMagicPrice) {
-                                Player.gp -= Store.attackMagicPrice;
-                                Player.attackMagic += 1;
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_6: //buy 1 defensemagic if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.defenseMagicPrice) {
-                                Player.gp -= Store.defenseMagicPrice;
-                                Player.defenseMagic += 1;
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_7: //buy bow if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.bowPrice) {
-                                Player.gp -= Store.bowPrice;
-                                Player.bow = true;
-                            }
-                        }
-                        break;
-                    case KeyEvent.VK_8: //buy 1 arrow if in store
-                        if (collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.arrowPrice) {
-                                Player.gp -= Store.arrowPrice;
-                                Player.arrows += 1;
-                            }
-                        }
-                        break;
-                    //esc = pause
-                    case KeyEvent.VK_ESCAPE:
-                        if (!paused.get()){
-                            startPauseTime = System.currentTimeMillis();
-                            paused.set(true);
-                        }
-                        else {
-                            paused.set(false);
-                            pauseTime += System.currentTimeMillis() - startPauseTime;
-                            synchronized(thread){
-                               thread.notify(); 
-                            }
-                        }
-                    default:
-                        break;
-                }
+                //go find the key binding
+                KeyBindings.bind(e.getKeyCode());
             }
 
             @Override
@@ -891,58 +839,81 @@ public class Game extends JPanel {
         });
         Game game = new Game();
         nextLevel(game, frame);        
+        generateMap();        
         generateEnemies();
-        generateMap();
         double enemyFPS = 2;
         final int gameFPS = 60;
 
 
-        //game loop
+        //MAIN GAME LOOP
         Runnable runnable = () -> {
             int aiTimer = 0;
             while (true) {
+                
+                //handle game pausing
                 if (paused.get()) {
                     synchronized(thread) {
                         try {
                             frame.repaint();
                             thread.wait();
                         } catch (InterruptedException ex) {
-                            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(Game.class.getName()).log(
+                                    Level.SEVERE, null, ex);
                         }
                     }
                 }
+                
+                //animate stuff once per game loop
                 animateArrowShot();
+                
+                //calculate enemies killed
                 int deadEnemies = 0;
                 for (int a = 0; a < ENEMIES; a++) { 
                     if (enemyList[a].getHP() <= 0) deadEnemies++;
                 }
                 enemiesKilled = deadEnemies;
+                
+                //if all enemies are killed, make a new map
                 if (ENEMIES == deadEnemies) {
                     frame.remove(frame);
                     Game g = null;
                     try {
                         g = new Game();
                     } catch (IOException ex) {
-                        Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Game.class.getName()).log(
+                                Level.SEVERE, null, ex);
                     }
                     try {
                         nextLevel(g, frame);
                     } catch (IOException ex) {
-                        Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Game.class.getName()).log(
+                                Level.SEVERE, null, ex);
                     }
+                    generateMap();                    
                     generateEnemies();
-                    generateMap();
                 }
                 
+                //move ai
                 if (aiTimer == (int)((100/enemyFPS)) * (level)) {
                     aiTimer = 0;
                     initAI();
                 }
-                //player collides with enemy
+                
+                /* ==HANDLING COLLISIONS== */
+                
+                //if player collides with enemy, knock back player and calculate
+                //  hp's/remove dead entities
                 for (int a = 0; a < ENEMIES; a++){
-                    if (collisionDetect(Player.x, Player.y, enemyList[a].getX(), enemyList[a].getY())){
-                        Player.hp -= Math.round(Math.random() * enemyList[a].getHP());
-                        enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(Player.minDamage + (Math.random() * Player.maxDamage)));
+                    if (collisionDetect(
+                            Player.x,
+                            Player.y,
+                            enemyList[a].getX(),
+                            enemyList[a].getY())){
+                        Player.hp -= Math.round(
+                                Math.random() * enemyList[a].getHP());
+                        enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(
+                                Player.minDamage + (
+                                        Math.random() * Player.maxDamage)));
                         if (enemyList[a].getHP() <= 0) {
                             enemyList[a].setX(-enemyList[a].getSize());
                             enemyList[a].setY(-enemyList[a].getSize());
@@ -956,159 +927,108 @@ public class Game extends JPanel {
                             thirdHigh = getHighScore(3);
                             gameOver.set(true);
                         }
-                        switch(Player.lastDir){
-                            case 1: //up
-                                Player.y += Player.size;
-                                break;
-                            case 2: //left
-                                Player.x += Player.size;
-                                break;
-                            case 3: //down
-                                Player.y -= Player.size;
-                                break;
-                            case 4: //right
-                                Player.x -= Player.size;
-                                break;
-                            default:
-                                break;
-                        }
+                        Player.knockbackPlayer();
                     }
                 }
-                //player collides with powerup
+                
+                //if player collides with powerup, remove the powerup and give 
+                //  the player superpowers
                 for (int a = 0; a < POWERUPS; a++) {
-                    if (collisionDetect(Player.x, Player.y, powerupList[a].getX(), powerupList[a].getY())) {
+                    if (collisionDetect(
+                            Player.x, 
+                            Player.y, 
+                            powerupList[a].getX(), 
+                            powerupList[a].getY())) {
                         powerupList[a].setX(-Powerup.size);
                         powerupList[a].setY(-Powerup.size);
                         switch(powerupList[a].getType()) {
                             case GOLD:
-                                Player.gp += (int) Math.ceil(Math.random() * level * 10);
+                                Player.gp += (int) Math.ceil(
+                                        Math.random() * level * 10);
                                 break;
                             case HEALTH:
-                                Player.hp += (int) Math.ceil(Math.random() * level * 10);
+                                Player.hp += (int) Math.ceil(
+                                        Math.random() * level * 10);
                                 break;
                             case MINATTACK:
-                                Player.minDamage += (int) Math.ceil(Math.random() * level * 5);
+                                Player.minDamage += (int) Math.ceil(
+                                        Math.random() * level * 5);
                                 if (Player.minDamage > Player.maxDamage){
                                     Player.maxDamage = Player.minDamage;
                                 }
                                 break;
                             case MAXATTACK:
-                                Player.maxDamage += (int) Math.ceil(Math.random() * level * 5);
+                                Player.maxDamage += (int) Math.ceil(
+                                        Math.random() * level * 5);
                                 break;
                             case MANA:
-                                Player.mana += (int) Math.ceil(Math.random() * level * 10);
+                                Player.mana += (int) Math.ceil(
+                                        Math.random() * level * 10);
                                 break;
                         }
                     }
                 }
-                //player collides with rock
+                
+                //if player collides with rock, knock them back
                 for (int a = 0; a < ROCKS; a++){
-                    if (collisionDetect(Player.x, Player.y, rockList[a].getX(), rockList[a].getY())){
-                        switch(Player.lastDir){
-                            case 1: //up
-                                Player.y += Player.size;
-                                break;
-                            case 2: //left
-                                Player.x += Player.size;
-                                break;
-                            case 3: //down
-                                Player.y -= Player.size;
-                                break;
-                            case 4: //right
-                                Player.x -= Player.size;
-                                break;
-                            default:
-                                break;
+                    if (collisionDetect(
+                            Player.x, 
+                            Player.y, 
+                            rockList[a].getX(), 
+                            rockList[a].getY())){
+                        Player.knockbackPlayer();
+                    }
+                    
+                    for (int b = 0; b < ENEMIES; b++){
+                        //if enemy collides with rock, knock them back
+                        if (collisionDetect(
+                                enemyList[b].getX(), 
+                                enemyList[b].getY(), 
+                                rockList[a].getX(), 
+                                rockList[a].getY())){
+                            enemyList[b].knockbackEnemy();
                         }
                     }
-                    //enemy collides with rock
-                    for (int b = 0; b < ENEMIES; b++) {
-                        for (int c = 0; c < ENEMIES; c++) {
-                            if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), rockList[a].getX(), rockList[a].getY())){
-                                switch(enemyList[b].getLastDir()){
-                                    case 1: //up
-                                        enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
-                                        break;
-                                    case 2: //left
-                                        enemyList[b].setX(enemyList[b].getX()+enemyList[b].getSize());
-                                        break;
-                                    case 3: //down
-                                        enemyList[b].setY(enemyList[b].getY()-enemyList[b].getSize());
-                                        break;
-                                    case 4: //right
-                                        enemyList[b].setX(enemyList[b].getX()-enemyList[b].getSize());
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                            //enemy collides with enemy
-                            if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), enemyList[c].getX(), enemyList[c].getY()) && c != b){
-                                switch(enemyList[b].getLastDir()){
-                                    case 1: //up
-                                        enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
-                                        break;
-                                    case 2: //left
-                                        enemyList[b].setX(enemyList[b].getX()+enemyList[b].getSize());
-                                        break;
-                                    case 3: //down
-                                        enemyList[b].setY(enemyList[b].getY()-enemyList[b].getSize());
-                                        break;
-                                    case 4: //right
-                                        enemyList[b].setX(enemyList[b].getX()-enemyList[b].getSize());
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
+                }
+                
+                for (int b = 0; b < ENEMIES; b++) {
+                    //if enemy collides with enemy, knock an enemy back
+                    for (int c = 0; c < ENEMIES; c++) {
+                        if (collisionDetect(
+                                enemyList[b].getX(), 
+                                enemyList[b].getY(), 
+                                enemyList[c].getX(), 
+                                enemyList[c].getY()) && c != b){
+                            enemyList[b].knockbackEnemy();
                         }
-                        //enemy collides with powerup
-                        for (int d = 0; d < POWERUPS; d++) {
-                            if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), powerupList[d].getX(), powerupList[d].getY())){
-                                switch(enemyList[b].getLastDir()){
-                                    case 1: //up
-                                        enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
-                                        break;
-                                    case 2: //left
-                                        enemyList[b].setX(enemyList[b].getX()+enemyList[b].getSize());
-                                        break;
-                                    case 3: //down
-                                        enemyList[b].setY(enemyList[b].getY()-enemyList[b].getSize());
-                                        break;
-                                    case 4: //right
-                                        enemyList[b].setX(enemyList[b].getX()-enemyList[b].getSize());
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
+                    }
+
+                    //enemy collides with powerup, knock enemy back
+                    for (int d = 0; d < POWERUPS; d++) {
+                        if (collisionDetect(
+                                enemyList[b].getX(), 
+                                enemyList[b].getY(), 
+                                powerupList[d].getX(), 
+                                powerupList[d].getY())){
+                            enemyList[b].knockbackEnemy();
                         }
-                        //enemy collides with store
-                        if (collisionDetect(enemyList[b].getX(), enemyList[b].getY(), store.x, store.y)) {
-                           switch(enemyList[b].getLastDir()){
-                                case 1: //up
-                                    enemyList[b].setY(enemyList[b].getY()+enemyList[b].getSize());
-                                    break;
-                                case 2: //left
-                                    enemyList[b].setX(enemyList[b].getX()+enemyList[b].getSize());
-                                    break;
-                                case 3: //down
-                                    enemyList[b].setY(enemyList[b].getY()-enemyList[b].getSize());
-                                    break;
-                                case 4: //right
-                                    enemyList[b].setX(enemyList[b].getX()-enemyList[b].getSize());
-                                    break;
-                                default:
-                                    break;
-                            } 
-                        }
+                    }
+                    
+                    //enemy collides with store, knock enemy back
+                    if (collisionDetect(
+                            enemyList[b].getX(), 
+                            enemyList[b].getY(), 
+                            store.x, 
+                            store.y)) {
+                       enemyList[b].knockbackEnemy();
                     }
                 }
                 frame.repaint();
                 try {
                     thread.sleep(1000/gameFPS);
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(Game.class.getName()).log(
+                            Level.SEVERE, null, ex);
                 }
                 aiTimer++; 
             }

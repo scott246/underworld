@@ -54,4 +54,23 @@ public class Player {
         bow = false;
         arrows = 0;
     }
+    
+    public static void knockbackPlayer() {
+        switch(lastDir){
+            case 1: //up
+                y += size;
+                break;
+            case 2: //left
+                x += size;
+                break;
+            case 3: //down
+                y -= size;
+                break;
+            case 4: //right
+                x -= size;
+                break;
+            default:
+                break;
+        }
+    }
 }

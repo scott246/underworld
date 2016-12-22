@@ -20,8 +20,8 @@ public class Store {
     static int defenseMagicPrice = 20 * (level + 1);
     static int bowPrice = 50;
     static int arrowPrice = 2 * (level + 1);
-    static int x = 0;
-    static int y = 0;
+    static int x = Player.x;
+    static int y = Player.y;
     static int size = 20;
     
     void setX(int x1){
