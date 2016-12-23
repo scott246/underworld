@@ -21,9 +21,9 @@ public class Player {
     static int y = Game.roundLocation(yframe/2, size);
     static int lastDir = 0;
     static int gp = 0;
-    static int mana = 200;
-    static int attackMagic = 10;
-    static int defenseMagic = 10;
+    static int mana = 0;
+    static int attackMagic = 0;
+    static int defenseMagic = 0;
     static boolean bow = false;
     static int arrows = 0;
     
