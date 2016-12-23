@@ -14,18 +14,18 @@ import static javaapplication1.Game.yframe;
  */
 public class Player {
     static int size = 20;
-    static int hp = 30;
+    static int hp = 50;
     static int minDamage = 1;
     static int maxDamage = 7;
     static int x = Game.roundLocation(xframe/2, size);
     static int y = Game.roundLocation(yframe/2, size);
     static int lastDir = 0;
     static int gp = 0;
-    static int mana = 20;
-    static int attackMagic = 1;
-    static int defenseMagic = 1;
-    static boolean bow = true;
-    static int arrows = 10;
+    static int mana = 200;
+    static int attackMagic = 10;
+    static int defenseMagic = 10;
+    static boolean bow = false;
+    static int arrows = 0;
     
     public static void movePlayerLeft() {
         if (x > 0) x -= size;
@@ -41,7 +41,7 @@ public class Player {
     }
     public static void resetPlayer() {
         size = 20;
-        hp = 20;
+        hp = 50;
         minDamage = 1;
         maxDamage = 7;
         x = 400;

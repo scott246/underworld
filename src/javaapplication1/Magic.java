@@ -5,9 +5,6 @@
  */
 package javaapplication1;
 
-import static javaapplication1.Game.ENEMIES;
-import static javaapplication1.Game.ROCKS;
-
 /**
  *
  * @author Nathan
@@ -25,11 +22,8 @@ public class Magic {
         switch(phase){
             case 1: //on player
                 //covers a 1x1 area
-                for (int a = 0; a < 1; a++){
-                    for (int b = 0; b < 1; b++){
-                        x[a] = Player.x; y[a] = Player.y;
-                    }
-                }
+                x[0] = Player.x;
+                y[0] = Player.y;
                 break;
             case 2: //closest; 1 block from player
                 //covers a 3x3 area
@@ -132,6 +126,7 @@ public class Magic {
                         y[b] = -size;
                     }
                 }
+                break;
         }
         if (phaseDelay == 0) {
             phase++;
@@ -251,6 +246,7 @@ public class Magic {
                         y[b] = -size;
                     }
                 }
+                break;
         }
         if (phaseDelay == 0) {
             phase++;

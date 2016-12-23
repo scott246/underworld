@@ -8,9 +8,8 @@
  * TODO:
  * make it possible to shoot more than one arrow at a time
  * animations
- *  magic
+ *  magic (fix problem where you can't do more than one)
  *  movement
- * tell the player in real time what they can/can't do
  * update graphics
  */
 package javaapplication1;
@@ -73,6 +72,7 @@ public class Game extends JPanel {
     static public Thread thread;
     static boolean instructionDisplay = false;
     static boolean playerIsDead = false;
+    static String information = "";
     
     //high score variables
     static int highScore = 0;
@@ -572,7 +572,6 @@ public class Game extends JPanel {
             }
         }
         
-        
         //draw defense magic
         if (Magic.defenseMagicExists){
             g.setColor(Color.BLUE);
@@ -585,7 +584,6 @@ public class Game extends JPanel {
                 }
             }
         }
-        
         
         //draw player
         g.setColor(Color.BLUE);
@@ -758,6 +756,15 @@ public class Game extends JPanel {
                         ytexty+=text.getFontMetrics().getHeight());
             }
         }
+        //information display       
+        text.setFont(new Font("Courier New", Font.BOLD, 14));
+        g.setColor(Color.WHITE);
+        int xtextx = Player.x+Player.size;
+        int ytexty = Player.y+Player.size;
+        text.drawString(
+                information, 
+                xtextx, 
+                ytexty);
         //instructions screen
         String instructions = null;
         if (instructionDisplay) {
@@ -877,6 +884,14 @@ public class Game extends JPanel {
                 }
                 if (Magic.defenseMagicExists){
                     Magic.animateDefenseMagic();
+                }
+                if (Error.errors){
+                    Error.displayError(Error.activeError);
+                    Error.errorDelay--;
+                    if (Error.errorDelay == 0) {
+                        Error.displayError(Errors.NOERROR);
+                        Error.errorDelay = 60;
+                    }
                 }
                 
                 //calculate enemies killed

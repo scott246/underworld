@@ -76,7 +76,7 @@ public class KeyBindings {
                         
                     //n = use attack magic
                     case KeyEvent.VK_N:
-                        if (Player.mana >= 20) {
+                        if (Player.mana >= 20 && Player.attackMagic >= 1) {
                             if (!Magic.attackMagicExists){
                                 Magic.attackMagicExists = true;
                             }
@@ -95,6 +95,14 @@ public class KeyBindings {
                             Player.mana -= 20;
                             Player.attackMagic -= 1;
                         }
+                        else if (Player.mana < 20 && Player.attackMagic >= 1) {
+                            Error.activeError = Errors.NOMANA;
+                            Error.errors = true;
+                        }
+                        else if (Player.attackMagic < 1) {
+                            Error.activeError = Errors.NOMAGIC;
+                            Error.errors = true;
+                        }
                         break;
                     //m = use defense magic
                     case KeyEvent.VK_M:
@@ -105,6 +113,14 @@ public class KeyBindings {
                             Player.hp += (30 * Game.level);
                             Player.mana -= 10;
                             Player.defenseMagic -= 1;
+                        }
+                        else if (Player.mana < 10 && Player.defenseMagic >= 1) {
+                            Error.activeError = Errors.NOMANA;
+                            Error.errors = true;
+                        }
+                        else if (Player.defenseMagic < 1) {
+                            Error.activeError = Errors.NOMAGIC;
+                            Error.errors = true;
                         }
                         break;
                     //i = shoot arrow up
@@ -126,6 +142,14 @@ public class KeyBindings {
                             }
                             Player.arrows--;
                         }
+                        else if (Player.bow && Player.arrows <= 0) {
+                            Error.activeError = Errors.NOARROWS;
+                            Error.errors = true;
+                        }
+                        else if (!Player.bow) {
+                            Error.activeError = Errors.NOBOW;
+                            Error.errors = true;
+                        }
                         break;
                     //j = shoot arrow left
                     case KeyEvent.VK_J:
@@ -145,7 +169,14 @@ public class KeyBindings {
                                 }
                             }
                             Player.arrows--;
-                            
+                        }
+                        else if (Player.bow && Player.arrows <= 0) {
+                            Error.activeError = Errors.NOARROWS;
+                            Error.errors = true;
+                        }
+                        else if (!Player.bow) {
+                            Error.activeError = Errors.NOBOW;
+                            Error.errors = true;
                         }
                         break;
                     //k = shoot arrow down
@@ -167,6 +198,14 @@ public class KeyBindings {
                             }
                             Player.arrows--;
                         }
+                        else if (Player.bow && Player.arrows <= 0) {
+                            Error.activeError = Errors.NOARROWS;
+                            Error.errors = true;
+                        }
+                        else if (!Player.bow) {
+                            Error.activeError = Errors.NOBOW;
+                            Error.errors = true;
+                        }
                         break;
                     //l = shoot arrow right
                     case KeyEvent.VK_L:
@@ -187,6 +226,14 @@ public class KeyBindings {
                             }
                             Player.arrows--;
                         }
+                        else if (Player.bow && Player.arrows <= 0) {
+                            Error.activeError = Errors.NOARROWS;
+                            Error.errors = true;
+                        }
+                        else if (!Player.bow) {
+                            Error.activeError = Errors.NOBOW;
+                            Error.errors = true;
+                        }
                         break;
                     //buy 1 hp if in store    
                     case KeyEvent.VK_1: 
@@ -194,6 +241,10 @@ public class KeyBindings {
                             if (Player.gp >= Store.hpPrice) {
                                 Player.gp -= Store.hpPrice;
                                 Player.hp += (2*Game.level);
+                            }
+                            else if (Player.gp < Store.hpPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
                             }
                         }
                         break;
@@ -204,6 +255,10 @@ public class KeyBindings {
                                 Player.gp -= Store.manaPrice;
                                 Player.mana += (2*Game.level);
                             }
+                            else if (Player.gp < Store.manaPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
                         }
                         break;
                     //buy 1 mindamage if in store    
@@ -212,6 +267,10 @@ public class KeyBindings {
                             if (Player.gp >= Store.minDamagePrice) {
                                 Player.gp -= Store.minDamagePrice;
                                 if (Player.minDamage++ > Player.maxDamage) Player.maxDamage++;
+                            }
+                            else if (Player.gp < Store.minDamagePrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
                             }
                         }
                         break;
@@ -222,6 +281,10 @@ public class KeyBindings {
                                 Player.gp -= Store.maxDamagePrice;
                                 Player.maxDamage += 1;
                             }
+                            else if (Player.gp < Store.maxDamagePrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
                         }
                         break;
                     //buy 1 attackmagic if in store    
@@ -230,6 +293,10 @@ public class KeyBindings {
                             if (Player.gp >= Store.attackMagicPrice) {
                                 Player.gp -= Store.attackMagicPrice;
                                 Player.attackMagic += 1;
+                            }
+                            else if (Player.gp < Store.attackMagicPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
                             }
                         }
                         break;
@@ -240,6 +307,10 @@ public class KeyBindings {
                                 Player.gp -= Store.defenseMagicPrice;
                                 Player.defenseMagic += 1;
                             }
+                            else if (Player.gp < Store.defenseMagicPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
                         }
                         break; 
                     //buy bow if in store
@@ -249,6 +320,10 @@ public class KeyBindings {
                                 Player.gp -= Store.bowPrice;
                                 Player.bow = true;
                             }
+                            else if (Player.gp < Store.bowPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
                         }
                         break;
                     //buy 1 arrow if in store    
@@ -257,6 +332,10 @@ public class KeyBindings {
                             if (Player.gp >= Store.arrowPrice) {
                                 Player.gp -= Store.arrowPrice;
                                 Player.arrows += 1;
+                            }
+                            else if (Player.gp < Store.arrowPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
                             }
                         }
                         break;
