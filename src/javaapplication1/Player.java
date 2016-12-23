@@ -17,8 +17,8 @@ public class Player {
     static int hp = 50;
     static int minDamage = 1;
     static int maxDamage = 7;
-    static int x = Game.roundLocation(xframe/2, size);
-    static int y = Game.roundLocation(yframe/2, size);
+    static int x = Game.roundLocation((int)xframe/2, size);
+    static int y = Game.roundLocation((int)yframe/2, size);
     static int lastDir = 0;
     static int gp = 0;
     static int mana = 0;
