@@ -96,7 +96,7 @@ public class Game extends JPanel {
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:game.db";
+            String url = "jdbc:sqlite:src/database/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             
@@ -135,7 +135,7 @@ public class Game extends JPanel {
             LocalDateTime now = LocalDateTime.now();
             System.out.println(dtf.format(now)); //2016/11/16 12:08:43
             // db parameters
-            String url = "jdbc:sqlite:game.db";
+            String url = "jdbc:sqlite:src/database/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "INSERT INTO highscores "
@@ -158,7 +158,7 @@ public class Game extends JPanel {
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:game.db";
+            String url = "jdbc:sqlite:src/database/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String q = "SELECT DISTINCT enemiesKilled " +
