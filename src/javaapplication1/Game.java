@@ -6,9 +6,7 @@
 
 /**
  * TODO:
- * make it possible to shoot more than one arrow at a time
  * animations
- *  magic (fix problem where you can't do more than one)
  *  movement
  * update graphics
  */

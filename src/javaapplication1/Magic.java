@@ -126,6 +126,8 @@ public class Magic {
                         y[b] = -size;
                     }
                 }
+                phase = 0;
+                phaseDelay = 5;
                 break;
         }
         if (phaseDelay == 0) {
@@ -246,6 +248,8 @@ public class Magic {
                         y[b] = -size;
                     }
                 }
+                phase = 0;
+                phaseDelay = 5;
                 break;
         }
         if (phaseDelay == 0) {
