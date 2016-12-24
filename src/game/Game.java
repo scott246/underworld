@@ -9,6 +9,7 @@
  * animations
  *  movement
  * update graphics
+ * make the database work in a jar
  */
 package game;
 
@@ -18,7 +19,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.event.*;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -90,13 +95,22 @@ public class Game extends JPanel {
     /**
      * Connect via JDBC to SQLite database for high score keeping
      */
-    public static void connectToDB() {
+    public static void connectToDB() throws IOException {
         System.out.println(xframe);
         System.out.println(yframe);
         Connection conn = null;
         try {
+            //make a directory to store the database in
+            File dir = new File("/UnderworldDBs");
+            if (!dir.exists()){
+                dir.mkdir();
+            }
+            byte data[] = new byte[0];
+            Path file = Paths.get("/UnderworldDBs/game.db");
+            Files.write(file, data);
+            
             // db parameters
-            String url = "jdbc:sqlite:src/database/game.db";
+            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             
@@ -135,7 +149,7 @@ public class Game extends JPanel {
             LocalDateTime now = LocalDateTime.now();
             System.out.println(dtf.format(now)); //2016/11/16 12:08:43
             // db parameters
-            String url = "jdbc:sqlite:src/database/game.db";
+            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "INSERT INTO highscores "
@@ -158,7 +172,7 @@ public class Game extends JPanel {
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:src/database/game.db";
+            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String q = "SELECT DISTINCT enemiesKilled " +
