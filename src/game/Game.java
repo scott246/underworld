@@ -101,16 +101,16 @@ public class Game extends JPanel {
         Connection conn = null;
         try {
             //make a directory to store the database in
-            File dir = new File("/UnderworldDBs");
+            File dir = new File(System.getProperty("user.home")+"/UnderworldDBs");
             if (!dir.exists()){
                 dir.mkdir();
+                byte data[] = new byte[0];
+                Path file = Paths.get(System.getProperty("user.home")+"/UnderworldDBs");
+                Files.write(file, data);
             }
-            byte data[] = new byte[0];
-            Path file = Paths.get("/UnderworldDBs/game.db");
-            Files.write(file, data);
             
             // db parameters
-            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
+            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             
@@ -149,7 +149,7 @@ public class Game extends JPanel {
             LocalDateTime now = LocalDateTime.now();
             System.out.println(dtf.format(now)); //2016/11/16 12:08:43
             // db parameters
-            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
+            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "INSERT INTO highscores "
@@ -172,7 +172,7 @@ public class Game extends JPanel {
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:/UnderworldDBs/game.db";
+            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String q = "SELECT DISTINCT enemiesKilled " +

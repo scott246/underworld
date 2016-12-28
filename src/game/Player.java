@@ -44,8 +44,8 @@ public class Player {
         hp = 50;
         minDamage = 1;
         maxDamage = 7;
-        x = 400;
-        y = 300;
+        x = Game.roundLocation((int)xframe/2, size);
+        y = Game.roundLocation((int)yframe/2, size);
         lastDir = 0;
         gp = 0;
         mana = 0;

@@ -73,6 +73,7 @@ public class KeyBindings {
                         Game.startTime = System.currentTimeMillis();
                         Game.pauseTime = 0;
                         Player.resetPlayer();
+                        break;
                         
                     //n = use attack magic
                     case KeyEvent.VK_N:
