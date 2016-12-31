@@ -94,6 +94,7 @@ public class Game extends JPanel {
     
     /**
      * Connect via JDBC to SQLite database for high score keeping
+     * @throws java.io.IOException
      */
     public static void connectToDB() throws IOException {
         System.out.println(xframe);
@@ -133,6 +134,29 @@ public class Game extends JPanel {
             } catch (SQLException ex) {
                 System.out.println(ex.getMessage());
             }
+        }
+    }
+    
+    /**
+     * Deletes all entries that are less than the third highest score in order
+     * to keep the database small.
+     * @throws java.io.IOException
+     */
+    public static void dbClean() throws IOException {
+        Connection conn = null;
+        try {
+            // db parameters
+            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
+            // create a connection to the database
+            conn = DriverManager.getConnection(url);
+            String u = "DELETE FROM highscores "
+                    + "WHERE enemiesKilled < "+getHighScore(3)+";";
+            Statement st = conn.createStatement();
+            st.executeUpdate(u);
+            conn.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -220,6 +244,8 @@ public class Game extends JPanel {
         
         //density of powerups (lower = less dense)
         double powerupFrequency = .03;
+        
+        
         int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
         int rockCount = 0;
         int powerupCount = 0;
@@ -291,8 +317,8 @@ public class Game extends JPanel {
                 }
                 
                 //avoid having rocks spawn on player
-                if (roundLocation(a, Rock.size) == p.x &&
-                        roundLocation(b, Rock.size) == p.y) {
+                if (roundLocation(a, Rock.size) == store.x &&
+                        roundLocation(b, Rock.size) == store.y) {
                     b -= Rock.size;
                 }
                 
@@ -325,7 +351,7 @@ public class Game extends JPanel {
     }
 
     /**
-     * Spawns bad guys in the map
+     * Spawns bad guys randomly in the map
      */
     public static void generateEnemies() {
         for (int a = 0; a < ENEMIES; a++){            
@@ -767,7 +793,10 @@ public class Game extends JPanel {
         String instructions = null;
         if (instructionDisplay) {
             g.setColor(Color.DARK_GRAY);
-            graphics.setFont(new Font("Courier New", Font.BOLD, 14));
+            if (xframe == 640 && yframe == 480)
+                graphics.setFont(new Font("Courier New", Font.BOLD, 10));
+            else
+                graphics.setFont(new Font("Courier New", Font.BOLD, 14));
             graphics.fillRect(0, Rock.size * 3, xframe, yframe);
             g.setColor(Color.WHITE);
             instructions = "==INSTRUCTIONS==\n"
@@ -827,6 +856,7 @@ public class Game extends JPanel {
         store.y = p.y;
         startTime = System.currentTimeMillis();
         connectToDB();
+        dbClean();
         JFrame frame = new JFrame("Underworld"); 
         
         frame.addKeyListener(new KeyListener() {
@@ -843,6 +873,7 @@ public class Game extends JPanel {
 
             @Override
             public void keyReleased(KeyEvent e) {
+                e.setKeyCode(KeyEvent.KEY_RELEASED);
             }
         });
         Game game = new Game(xframe, yframe);

@@ -50,13 +50,15 @@ public class KeyBindings {
                             Player.movePlayerRight();
                         }
                         break;
-                    //i = display instructions
+                    //q = display instructions
                     case KeyEvent.VK_Q:
                         if (!paused.get()){
+                            Game.startPauseTime = System.currentTimeMillis();
                             paused.set(true);
                         }
                         else {
                             paused.set(false);
+                            Game.pauseTime += System.currentTimeMillis() - Game.startPauseTime;
                             synchronized(Game.thread){
                                Game.thread.notify(); 
                             }
