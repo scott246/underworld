@@ -14,8 +14,8 @@ import static game.Game.level;
 public class Store {
     static int manaPrice = 1 * (level + 1);
     static int hpPrice = 1 * (level + 1);
-    static int minDamagePrice = 12 * (level + 1);
-    static int maxDamagePrice = 10 * (level + 1);
+    static int minDamagePrice = 25 * (level + 1);
+    static int maxDamagePrice = 20 * (level + 1);
     static int attackMagicPrice = 20 * (level + 1);
     static int defenseMagicPrice = 20 * (level + 1);
     static int bowPrice = 50;

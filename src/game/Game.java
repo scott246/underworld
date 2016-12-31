@@ -10,28 +10,24 @@
  *  movement
  * update graphics
  * make the database work in a jar
+ * adjust difficulty
+ * fix the problem where a bigger screen size causes the player to be OP
+ * fix the problem where the enemies don't all spawn
+ * fix the problem where the rocks don't always spawn at the bottom right
+ * fix detect screen resolution option
  */
 package game;
 
 import java.awt.*;
 import java.awt.event.KeyListener;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.*;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 /**
  *
  * @author Nathan
@@ -46,15 +42,15 @@ public class Game extends JPanel {
     static long deathtime = 0;
     
     //enemy variables
-    static int ENEMIES = (int) 50;//Math.ceil(Math.random() * 50);
+    static int ENEMIES = 10000;//Math.ceil(Math.random() * 50);
     static Enemy[] enemyList = new Enemy[ENEMIES];
     
     //rock variables
-    static int ROCKS = (int)2000;
+    static int ROCKS = 10000;
     static Rock[] rockList = new Rock[ROCKS];
     
     //powerup variables
-    static int POWERUPS = (int)200;
+    static int POWERUPS = 200;
     static Powerup[] powerupList = new Powerup[POWERUPS];
     
     //store
@@ -66,6 +62,9 @@ public class Game extends JPanel {
     //screen dimensions
     static int xframe;
     static int yframe;
+    
+    //bigger screen = more enemies
+    static double screenSizeMultiplier;
     
     //player
     static Player p = new Player(); 
@@ -91,132 +90,6 @@ public class Game extends JPanel {
         paused = new AtomicBoolean(false);
         gameOver = new AtomicBoolean(false);
     }
-    
-    /**
-     * Connect via JDBC to SQLite database for high score keeping
-     * @throws java.io.IOException
-     */
-    public static void connectToDB() throws IOException {
-        System.out.println(xframe);
-        System.out.println(yframe);
-        Connection conn = null;
-        try {
-            //make a directory to store the database in
-            File dir = new File(System.getProperty("user.home")+"/UnderworldDBs");
-            if (!dir.exists()){
-                dir.mkdir();
-                byte data[] = new byte[0];
-                Path file = Paths.get(System.getProperty("user.home")+"/UnderworldDBs");
-                Files.write(file, data);
-            }
-            
-            // db parameters
-            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            
-            System.out.println("Connection to SQLite has been established.");
-
-            String u = "CREATE TABLE IF NOT EXISTS highscores "
-                + "(date DATETIME, "
-                + "enemiesKilled INTEGER);";
-            try (Statement st = conn.createStatement()) {
-                st.executeUpdate(u);
-            }
-            
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
-    }
-    
-    /**
-     * Deletes all entries that are less than the third highest score in order
-     * to keep the database small.
-     * @throws java.io.IOException
-     */
-    public static void dbClean() throws IOException {
-        Connection conn = null;
-        try {
-            // db parameters
-            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            String u = "DELETE FROM highscores "
-                    + "WHERE enemiesKilled < "+getHighScore(3)+";";
-            Statement st = conn.createStatement();
-            st.executeUpdate(u);
-            conn.close();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Add score to the database
-     * @param score
-     */
-    public static void addScore(int score) {
-        Connection conn = null;
-        try {
-            //get current date
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern(
-                    "yyyy-MM-dd HH:mm:ss");
-            LocalDateTime now = LocalDateTime.now();
-            System.out.println(dtf.format(now)); //2016/11/16 12:08:43
-            // db parameters
-            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            String u = "INSERT INTO highscores "
-                    + "VALUES ('"+dtf.format(now)+"', "+score+");";
-            Statement st = conn.createStatement();
-            st.executeUpdate(u);
-            conn.close();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Get nth highest score from database
-     * @param n
-     * @return nth highest score
-     */
-    public static int getHighScore(int n){
-        Connection conn = null;
-        try {
-            // db parameters
-            String url = "jdbc:sqlite:"+System.getProperty("user.home")+"/UnderworldDBs/game.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            String q = "SELECT DISTINCT enemiesKilled " +
-                "FROM highscores " +
-                "ORDER BY 1 DESC " +
-                "LIMIT 1 OFFSET "+(n-1)+";";
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery(q);
-            int max = 0;
-            if (rs.next()){
-                max = rs.getInt(1);
-            }
-            conn.close();
-            return max;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            return 0;
-        }
-    }
 
     /**
      * Helper function to enforce a grid layout. Takes n and rounds it to the 
@@ -239,13 +112,32 @@ public class Game extends JPanel {
      *      continue until you reach the bottom right edge of the screen
      */
     public static void generateMap() {
+        //create the screen size multiplier
+        switch (xframe){
+            case 640: //640x480
+                screenSizeMultiplier = 1;
+                break;
+            case 800: //800x600
+                screenSizeMultiplier = 1.5;
+                break;
+            case 1280: //1280x720
+                screenSizeMultiplier = 4;
+                break;
+            case 1920: //1920x1080
+                screenSizeMultiplier = 9;
+                break;
+            default:
+                screenSizeMultiplier = 16;
+                break;
+        }
+        
         //density of rocks (lower = more dense)
         double densityMultiplier = 3;
         
         //density of powerups (lower = less dense)
         double powerupFrequency = .03;
         
-        
+        ROCKS = 10000;
         int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
         int rockCount = 0;
         int powerupCount = 0;
@@ -265,6 +157,8 @@ public class Game extends JPanel {
                         rockList[rockCount].setX(roundLocation(a, Rock.size));
                         rockList[rockCount].setY(roundLocation(b, Rock.size)); 
                         if (rockCount++ >= ROCKS-1) {
+                            System.out.println("return called 1");
+                            System.out.println("ROCKS: "+ROCKS+", ROCKCOUNT: "+rockCount);
                             return;
                         }
                     }
@@ -327,6 +221,8 @@ public class Game extends JPanel {
                 rockList[rockCount].setX(roundLocation(a, Rock.size));
                 rockList[rockCount].setY(roundLocation(b, Rock.size));
                 if (rockCount++ >= ROCKS-1) {
+                    System.out.println("return called 2");
+                    System.out.println("ROCKS: "+ROCKS+", ROCKCOUNT: "+rockCount);
                     return;
                 }
                 
@@ -354,23 +250,39 @@ public class Game extends JPanel {
      * Spawns bad guys randomly in the map
      */
     public static void generateEnemies() {
+        ENEMIES = (int)Math.ceil(10 * level * screenSizeMultiplier);
         for (int a = 0; a < ENEMIES; a++){            
             Enemy e = new Enemy();
             
             //generate a random x and y variable within the border
             int tempX = roundLocation(
-                    (int) ((Math.random() * xframe) - Rock.size) + Rock.size,
+                    (int) (Math.random() * xframe - Rock.size * 3) + Rock.size,
                     e.getSize());
             int tempY = roundLocation(
-                    (int) ((Math.random() * yframe) - Rock.size * 2) +
+                    (int) (Math.random() * yframe - Rock.size * 5) +
                             Rock.size * 3,
                     e.getSize());
             
             //ensure enemies don't spawn on player
-            if (tempX == p.x && tempY == p.y) {
+            if (tempX == store.x && tempY == store.y) {
                 tempX += e.getSize();
                 tempY += e.getSize();
             }
+            
+            //ensure enemies don't spawn in rocks
+            boolean enemyInRock = false;
+            for (int b = 0; b < ROCKS; b++) {
+                if (tempX == rockList[b].getX() &&
+                        tempY == rockList[b].getY()){
+                    ENEMIES--;
+                    a--;
+                    enemyInRock = true;
+                    break;
+                }
+            }
+            
+            if (enemyInRock) continue;
+
             
 //            //ensure enemies don't spawn in unreachable spots
 //            //  (i.e. spots with rocks surrounding all sides)
@@ -379,24 +291,30 @@ public class Game extends JPanel {
 //            boolean down = false;
 //            boolean right = false;
 //            for (int b = 0; b < ROCKS; b++){
-//                if (tempX + e.getSize() == rockList[b].getX()) right = true;
-//                if (tempX - e.getSize() == rockList[b].getX()) left = true;
-//                if (tempY + e.getSize() == rockList[b].getY()) up = true;
-//                if (tempY - e.getSize() == rockList[b].getY()) down = true;
+//                if (tempX + e.getSize() == rockList[b].getX()
+//                        && tempY == rockList[b].getY()) right = true;
+//                if (tempX - e.getSize() == rockList[b].getX()
+//                        && tempY == rockList[b].getY()) left = true;
+//                if (tempY + e.getSize() == rockList[b].getY()
+//                        && tempX == rockList[b].getX()) up = true;
+//                if (tempY - e.getSize() == rockList[b].getY()
+//                        && tempX == rockList[b].getX()) down = true;
 //            }
 //            if (up && left && down && right) {
-//                tempX = Player.x + e.getSize() * 2;
-//                tempY = Player.y + e.getSize() * 2;
+//                ENEMIES--;
+//                a--;
+//                continue;
 //            }
-            
+//            
             
             //set enemy properties
-            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level))));
+            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level * .75))));
             e.setX(tempX);
             e.setY(tempY);
             e.setLastDir(0);
             enemyList[a] = e; 
-            System.out.println("Enemy "+a+" created at ("+e.getX()+","+e.getY()+")");
+            System.out.println("Enemy "+a+" created at ("+e.getX()+","+e.getY()+")");  
+            
         }
     }
 
@@ -551,301 +469,7 @@ public class Game extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);  
-        
-        Graphics2D graphics = (Graphics2D) g;
-        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        //draw background
-        g.setColor(Color.GRAY);
-        graphics.fillRect(0, 0, xframe, yframe);
-        
-        //draw enemies
-        for(int a = 0; a < ENEMIES; a++){
-                g.setColor(Color.RED);
-                graphics.fillRect(
-                        enemyList[a].getX(),
-                        enemyList[a].getY(),
-                        enemyList[a].getSize(),
-                        enemyList[a].getSize());
-                g.setColor(Color.BLACK);
-                graphics.drawString(
-                        Integer.toString(enemyList[a].getHP()), 
-                        enemyList[a].getX(), 
-                        enemyList[a].getY()+enemyList[a].getSize()/2);
-        }
-        
-        //draw powerups
-        for(int a = 0; a < POWERUPS; a++) {
-            g.setColor(Color.YELLOW);
-            graphics.fillRect(
-                    powerupList[a].getX(), 
-                    powerupList[a].getY(), 
-                    powerupList[a].getSize(), 
-                    powerupList[a].getSize());
-            g.setColor(Color.BLACK);
-            graphics.drawString(
-                    powerupList[a].getTypeString(), 
-                    powerupList[a].getX(), 
-                    powerupList[a].getY()+Powerup.size/2);
-        }
-        
-        //draw store
-        g.setColor(Color.GREEN);
-        graphics.fillRect(Store.x, Store.y, Store.size, Store.size);
-        
-        //draw arrow
-        g.setColor(Color.BLACK);
-        graphics.fillOval(Arrow.x + 5, Arrow.y + 5, Arrow.size, Arrow.size);
-        
-        //draw attack magic
-        if (Magic.attackMagicExists){
-            g.setColor(Color.RED);
-            for (int x : Magic.x){
-                for (int y : Magic.y){
-                    graphics.fillOval(x + 5, y + 5, Magic.size, Magic.size);
-                }
-            }
-        }
-        
-        //draw defense magic
-        if (Magic.defenseMagicExists){
-            g.setColor(Color.BLUE);
-            for (int x : Magic.x){
-                for (int y : Magic.y){
-                    graphics.fillOval(x + 5, y + 5, Magic.size, Magic.size);
-                }
-            }
-        }
-        
-        //draw player
-        g.setColor(Color.BLUE);
-        graphics.fillOval(p.x, p.y, p.size, p.size);
-        g.setColor(Color.LIGHT_GRAY);
-        graphics.drawString(
-                Integer.toString(p.hp), p.x, p.y+p.size/2);
-        
-        //draw rocks
-        for(int b = 0; b < ROCKS; b++){
-            g.setColor(Color.BLACK);
-            graphics.fillRect(
-                    rockList[b].getX(), 
-                    rockList[b].getY(), 
-                    rockList[b].getSize(), 
-                    rockList[b].getSize());
-        }
-        
-        //draw all text
-        g.setColor(Color.WHITE);
-        //alive time
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-        String aliveTime = "Time Alive: "+ Integer.toString(
-                (int)(getTimeAlive()/1000));
-        graphics.drawString(aliveTime, 10, 15);
-        //gold
-        g.setColor(Color.YELLOW);
-        graphics.drawString("Gold: "+p.gp, 10, 30);
-        //level
-        if (!instructionDisplay){
-            g.setColor(Color.WHITE);
-            FontMetrics m = g.getFontMetrics(g.getFont());
-            String ltext = "==Level " +level+"==";
-            graphics.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
-        }
-        if (instructionDisplay){
-            g.setColor(Color.WHITE);
-            FontMetrics m = g.getFontMetrics(g.getFont());
-            String ltext = "==PRESS [q] TO RETURN TO GAME==";
-            graphics.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
-        }
-        
-        //arrows
-        g.setColor(Color.WHITE);
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-        FontMetrics m1 = g.getFontMetrics(g.getFont());
-        String artext = "Arrows: " + p.arrows;
-        int textx = (xframe - m1.stringWidth(artext))/3;
-        int texty = 15;
-        graphics.drawString(artext, textx, texty);
-        //HP
-        g.setColor(Color.RED);
-        FontMetrics m2 = g.getFontMetrics(g.getFont());
-        String htext = "HP: " + p.hp;
-        int htextx = (xframe - m2.stringWidth(htext))/3;
-        int htexty = 30;
-        graphics.drawString(htext, htextx, htexty);
-        //attack magic
-        g.setColor(Color.RED);
-        FontMetrics m3 = g.getFontMetrics(g.getFont());
-        String atext = "Attack Magic: " + p.attackMagic;
-        int atextx = (xframe - m3.stringWidth(atext))*2/3;
-        int atexty = 15;
-        graphics.drawString(atext, atextx, atexty);
-        //defense magic
-        g.setColor(Color.BLUE);
-        FontMetrics m4 = g.getFontMetrics(g.getFont());
-        String dtext = "Defense Magic: " + p.defenseMagic;
-        int dtextx = (xframe - m4.stringWidth(dtext))*2/3;
-        int dtexty = 30;
-        graphics.drawString(dtext, dtextx, dtexty);
-        //damage
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-        g.setColor(Color.WHITE);
-        FontMetrics m5 = g.getFontMetrics(g.getFont());
-        String datext = "Damage: "+p.minDamage+"-"+p.maxDamage;
-        int datextx = xframe - Rock.size - m5.stringWidth(datext);
-        int datexty = 15;
-        graphics.drawString(datext, datextx, datexty);
-        //mana
-        g.setColor(Color.BLUE);
-        FontMetrics m6 = g.getFontMetrics(g.getFont());
-        String mtext = "Mana: "+p.mana;
-        int mtextx = xframe - Rock.size - m6.stringWidth(mtext);
-        int mtexty = 30;
-        graphics.drawString(mtext, mtextx, mtexty);
-        //enemies killed
-        g.setColor(Color.LIGHT_GRAY);
-        FontMetrics m7 = g.getFontMetrics(g.getFont());
-        String etext = "Enemies Killed: " + enemiesKilled;
-        int etextx = xframe - Rock.size - m7.stringWidth(etext);
-        int etexty = yframe-m7.getHeight() * 2;
-        graphics.drawString(etext, etextx, etexty);
-        //pause screen
-        g.setColor(Color.WHITE);
-        if (paused.get()){
-            FontMetrics metrics = g.getFontMetrics(g.getFont());
-            String text1 = "PAUSED";
-            int ptextx = (xframe - metrics.stringWidth(text1))/2;
-            int ptexty = ((yframe - metrics.getHeight())/2)
-                    + metrics.getAscent();
-            graphics.drawString(text1, ptextx, ptexty);
-        }
-        //game over screen
-        if (gameOver.get()){
-            FontMetrics metrics = g.getFontMetrics(g.getFont());
-            String text1 = "GAME OVER";
-            String text2 = "==PRESS [r] TO RESTART==";
-            String text3 = "==High Scores==";
-            String text4 = ""+highScore;
-            String text5 = ""+secondHigh;
-            String text6 = ""+thirdHigh;
-            int ptextx = (xframe - metrics.stringWidth(text1))/2;
-            int ptextx2 = (xframe - metrics.stringWidth(text2))/2;
-            int ptextx3 = (xframe - metrics.stringWidth(text3))/2;
-            int ptextx4 = (xframe - metrics.stringWidth(text4))/2;
-            int ptextx5 = (xframe - metrics.stringWidth(text5))/2;
-            int ptextx6 = (xframe - metrics.stringWidth(text6))/2;
-            int ptexty = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent();
-            int ptexty2 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
-            int ptexty3 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
-            int ptexty4 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 5;
-            int ptexty5 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 6;
-            int ptexty6 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 7;
-            graphics.drawString(text1, ptextx, ptexty);
-            graphics.drawString(text2, ptextx2, ptexty2);
-            graphics.drawString(text3, ptextx3, ptexty3);
-            graphics.drawString(text4, ptextx4, ptexty4);
-            graphics.drawString(text5, ptextx5, ptexty5);
-            graphics.drawString(text6, ptextx6, ptexty6);
-        }
-        //store screen
-        if (collisionDetect(p.x, p.y, Store.x, Store.y)) {        
-            graphics.setFont(new Font("Courier New", Font.BOLD, 14));
-            g.setColor(Color.WHITE);
-            String storeMenu = "==STORE==\n"
-                    + "[1] Buy HP: "+Store.hpPrice+" Gold\n"
-                    + "[2] Buy Mana: "+Store.manaPrice+" Gold\n"
-                    + "[3] Buy +1 Minimum Damage: "+Store.minDamagePrice+
-                    " Gold\n"
-                    + "[4] Buy +1 Maximum Damage: "+Store.maxDamagePrice+
-                    " Gold\n"
-                    + "[5] Buy +1 Attack Magic: "+Store.attackMagicPrice+
-                    " Gold\n"
-                    + "[6] Buy +1 Defense Magic: "+Store.defenseMagicPrice+
-                    " Gold\n"
-                    + "[7] Buy a Bow: "+Store.bowPrice+" Gold\n"
-                    + "[8] Buy +1 Arrows: "+Store.arrowPrice+" Gold\n";
-            int xtextx = xframe/2;
-            int ytexty = yframe/2 + graphics.getFontMetrics().getHeight();
-            for (String line : storeMenu.split("\n")) {
-                graphics.drawString(
-                        line, 
-                        xtextx, 
-                        ytexty+=graphics.getFontMetrics().getHeight());
-            }
-        }
-        //information display       
-        graphics.setFont(new Font("Courier New", Font.BOLD, 14));
-        g.setColor(Color.WHITE);
-        int xtextx = p.x+p.size;
-        int ytexty = p.y+p.size;
-        graphics.drawString(
-                information, 
-                xtextx, 
-                ytexty);
-        //instructions screen
-        String instructions = null;
-        if (instructionDisplay) {
-            g.setColor(Color.DARK_GRAY);
-            if (xframe == 640 && yframe == 480)
-                graphics.setFont(new Font("Courier New", Font.BOLD, 10));
-            else
-                graphics.setFont(new Font("Courier New", Font.BOLD, 14));
-            graphics.fillRect(0, Rock.size * 3, xframe, yframe);
-            g.setColor(Color.WHITE);
-            instructions = "==INSTRUCTIONS==\n"
-                    + "[wasd]  move (up, left, down, right)\n"
-                    + "[ijkl]  shoot arrows (up, left, down, right)\n"
-                    + "        requires you to buy a bow to use\n"
-                    + "[1-8]   buy item (while in the store)\n"
-                    + "[q]     toggle instructions\n"
-                    + "        don't worry, the game is paused\n"
-                    + "[n]     use attack magic\n"
-                    + "        every enemy in a 3 block radius takes your max "
-                    + "damage\n"
-                    + "        requires 20 mana to use\n"
-                    + "[m]     use defense magic\n"
-                    + "        increases your health by (30*your_level)\n"
-                    + "        requires 10 mana to use\n"
-                    + "[esc]   pause\n"
-                    + "[r]     restart game\n"
-                    + "==ENTITIES==\n"
-                    + "Red     enemy\n"
-                    + "        attack by bumping into them\n"
-                    + "        both will take a random amount damage based on "
-                    + "level and enemy's health\n"
-                    + "Blue    your player model\n"
-                    + "Green   store\n"
-                    + "        purchase items that increase your stats\n"
-                    + "        enemies can't attack you while you're in the "
-                    + "store\n"
-                    + "Yellow  powerup which increases various stats\n"
-                    + "        increases stats based on player level\n"
-                    + "        M = mana, H = health, - = minimum attack, + = "
-                    + "maximum attack, G = gold\n"
-                    + "==GAMEPLAY==\n"
-                    + "Navigate through the dungeon, kill all the enemies to get"
-                    + " to the next level,\n"
-                    + "get through as many levels as possible before you "
-                    + "inevitably die.";
-            int y = Rock.size * 3;
-            for (String line : instructions.split("\n")) {
-                graphics.drawString(line, 10, y+=graphics.getFontMetrics().getHeight());
-            }
-        }
-        
-        else if (!instructionDisplay) {
-            graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-            instructions = "Press [q] to display instructions";
-            long yinst = yframe - graphics.getFontMetrics().getHeight() * 2l;
-            graphics.drawString(instructions, 10, yinst);
-        }
+        Paint.paint(g);
     }
     
     public static void gameLoop() 
@@ -855,8 +479,8 @@ public class Game extends JPanel {
         store.x = p.x;
         store.y = p.y;
         startTime = System.currentTimeMillis();
-        connectToDB();
-        dbClean();
+        Database.dbConnect();
+        Database.dbClean();
         JFrame frame = new JFrame("Underworld"); 
         
         frame.addKeyListener(new KeyListener() {
@@ -930,9 +554,10 @@ public class Game extends JPanel {
                 //calculate enemies killed
                 int deadEnemies = 0;
                 for (int a = 0; a < ENEMIES; a++) { 
-                    if (enemyList[a].getHP() <= 0) deadEnemies++;
+                    if (enemyList[a].getHP() <= 0) {
+                        deadEnemies++;
+                    }
                 }
-                enemiesKilled = deadEnemies;
                 
                 //if all enemies are killed, make a new map
                 if (ENEMIES == deadEnemies) {
@@ -976,16 +601,17 @@ public class Game extends JPanel {
                                 p.minDamage + (
                                         Math.random() * p.maxDamage)));
                         if (enemyList[a].getHP() <= 0) {
+                            enemiesKilled++;
                             enemyList[a].setX(-enemyList[a].getSize());
                             enemyList[a].setY(-enemyList[a].getSize());
                             p.hp += Math.ceil(Math.random() * (10 * level));
                             p.gp += Math.ceil(Math.random() * level);
                         }
                         if (p.hp <= 0) {
-                            addScore(enemiesKilled);
-                            highScore = getHighScore(1);
-                            secondHigh = getHighScore(2);
-                            thirdHigh = getHighScore(3);
+                            Database.addScore(enemiesKilled);
+                            highScore = Database.getHighScore(1);
+                            secondHigh = Database.getHighScore(2);
+                            thirdHigh = Database.getHighScore(3);
                             gameOver.set(true);
                         }
                         p.knockbackPlayer();

@@ -8,6 +8,8 @@ package game;
 import java.awt.event.KeyEvent;
 import static game.Game.gameOver;
 import static game.Game.instructionDisplay;
+import static game.Game.level;
+import static game.Game.p;
 import static game.Game.paused;
 
 /**
@@ -74,6 +76,7 @@ public class KeyBindings {
                         gameOver.set(false);
                         Game.startTime = System.currentTimeMillis();
                         Game.pauseTime = 0;
+                        Game.enemiesKilled = 0;
                         Player.resetPlayer();
                         break;
                         
@@ -264,12 +267,16 @@ public class KeyBindings {
                             }
                         }
                         break;
-                    //buy 1 mindamage if in store    
+                    //buy mindamage if in store    
                     case KeyEvent.VK_3: 
                         if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.minDamagePrice) {
                                 Player.gp -= Store.minDamagePrice;
-                                if (Player.minDamage++ > Player.maxDamage) Player.maxDamage++;
+                                Player.minDamage += (int) Math.ceil(
+                                        Math.random() * level * 5);
+                                if (Player.minDamage > Player.maxDamage){
+                                    Player.maxDamage = Player.minDamage;
+                                }
                             }
                             else if (Player.gp < Store.minDamagePrice){
                                 Error.activeError = Errors.NOGOLD;
@@ -277,12 +284,13 @@ public class KeyBindings {
                             }
                         }
                         break;
-                    //buy 1 maxdamage if in store    
+                    //buy maxdamage if in store    
                     case KeyEvent.VK_4: 
                         if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
                             if (Player.gp >= Store.maxDamagePrice) {
                                 Player.gp -= Store.maxDamagePrice;
-                                Player.maxDamage += 1;
+                                Player.maxDamage += (int) Math.ceil(
+                                        Math.random() * level * 5);
                             }
                             else if (Player.gp < Store.maxDamagePrice){
                                 Error.activeError = Errors.NOGOLD;
