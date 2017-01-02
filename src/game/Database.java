@@ -39,7 +39,7 @@ public class Database {
             if (!dir.exists()){
                 dir.mkdir();
                 byte data[] = new byte[0];
-                Path file = Paths.get(System.getProperty("user.home")+"/UnderworldDBs");
+                Path file = Paths.get(System.getProperty("user.home")+"/UnderworldDBs/game.db");
                 Files.write(file, data);
             }
             
