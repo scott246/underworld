@@ -6,15 +6,8 @@
 
 /**
  * TODO:
- * animations
- *  movement
- * update graphics
- * make the database work in a jar
  * adjust difficulty
- * fix the problem where a bigger screen size causes the player to be OP
- * fix the problem where the enemies don't all spawn
- * fix the problem where the rocks don't always spawn at the bottom right
- * fix detect screen resolution option
+ * fix issue where the enemy can knock you through walls
  */
 package game;
 
@@ -70,6 +63,9 @@ public class Game extends JPanel {
     static Player p = new Player(); 
     
     //game variables
+    static int aiTimer = 0;
+    static boolean fog = false;
+    static boolean terrain = false;
     static int level = 0;
     static int enemiesKilled = 0;
     static public AtomicBoolean paused;
@@ -159,10 +155,12 @@ public class Game extends JPanel {
         
         ROCKS = 10000;
         int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
+        
         int rockCount = 0;
         int powerupCount = 0;
         for (int a = 0; a < xframe; a+=Rock.size) {
             for (int b = 0; b < yframe; b+=Rock.size) {
+                if (!terrain) power = yframe;
                 while(power > 0) {
                     
                     //use the rocks to generate a border
@@ -245,6 +243,7 @@ public class Game extends JPanel {
                     System.out.println("ROCKS: "+ROCKS+", ROCKCOUNT: "+rockCount);
                     return;
                 }
+                
                 
                 //generate new power and start over
                 power = (int)Math.ceil(
@@ -418,6 +417,7 @@ public class Game extends JPanel {
         f.setLocationRelativeTo(null);        
         f.setVisible(true);
         level++;
+        aiTimer = 0;
     }
     
     /**
@@ -492,8 +492,16 @@ public class Game extends JPanel {
         Paint.paint(g);
     }
     
-    public static void gameLoop() 
+    public static void gameLoop(boolean torchEnabled, boolean rocksEnabled) 
             throws InterruptedException, IOException {
+        if (torchEnabled) {
+            fog = true;
+            System.out.println("TORCH MODE ON");
+        }
+        if (rocksEnabled){
+            terrain = true;
+            System.out.println("TERRAIN MODE ON");
+        }
         p.x = roundLocation((int)xframe/2, p.size);
         p.y = roundLocation((int)yframe/2, p.size);
         store.x = p.x;
@@ -530,7 +538,6 @@ public class Game extends JPanel {
 
         //MAIN GAME LOOP
         Runnable runnable = () -> {
-            int aiTimer = 0;
             while (true) {
                 
                 //handle game pausing
@@ -600,7 +607,7 @@ public class Game extends JPanel {
                 }
                 
                 //move ai
-                if (aiTimer == (int)((100/enemyFPS)) / (level)) {
+                if (aiTimer >= (int)((100/enemyFPS)) / (level * .5)) {
                     aiTimer = 0;
                     initAI();
                 }

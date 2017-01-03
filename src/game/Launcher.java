@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -34,6 +35,7 @@ public class Launcher extends JFrame {
     JPanel p = new JPanel(cards); //panel with play button
     JPanel i = new JPanel(cards); //panel with image
     JPanel r = new JPanel(); //resolution selector
+    JPanel o = new JPanel(); //options selector
     final static String D1 = "640x480";
     final static String D2 = "800x600";
     final static String D3 = "1280x720";
@@ -42,10 +44,18 @@ public class Launcher extends JFrame {
     JButton playButton = new JButton("Play!");
     String resolutions[] = { D1, D2, D3, D4, D5 };
     JComboBox resBox = new JComboBox(resolutions);
+    JCheckBox fog = new JCheckBox("Enable Torch Mode");
+    JCheckBox terrain = new JCheckBox("Enable Terrain");
      
     public void addComponentToPane(Container pane) throws MalformedURLException {
         //add resolution selector to panel
         r.add(resBox);
+        
+        //add options
+        o.add(fog);
+        fog.setSelected(false);
+        o.add(terrain);
+        terrain.setSelected(true);
         
         //action listener for play button
         playButton.addActionListener((ActionEvent ae) -> {
@@ -55,7 +65,7 @@ public class Launcher extends JFrame {
                     try {
                         Game.xframe = 640;
                         Game.yframe = 480;
-                        Game.gameLoop();
+                        Game.gameLoop(fog.isSelected(), terrain.isSelected());
                     } catch (IOException | InterruptedException ex) {
                         Logger.getLogger(Launcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -66,7 +76,7 @@ public class Launcher extends JFrame {
                     try {
                         Game.xframe = 800;
                         Game.yframe = 600;
-                        Game.gameLoop();
+                        Game.gameLoop(fog.isSelected(), terrain.isSelected());
                     } catch (IOException | InterruptedException ex) {
                         Logger.getLogger(Launcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -77,7 +87,7 @@ public class Launcher extends JFrame {
                     try {
                         Game.xframe = 1280;
                         Game.yframe = 720;
-                        Game.gameLoop();
+                        Game.gameLoop(fog.isSelected(), terrain.isSelected());
                     } catch (IOException | InterruptedException ex) {
                         Logger.getLogger(Launcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -88,7 +98,7 @@ public class Launcher extends JFrame {
                     try {
                         Game.xframe = 1920;
                         Game.yframe = 1080;
-                        Game.gameLoop();
+                        Game.gameLoop(fog.isSelected(), terrain.isSelected());
                     } catch (IOException | InterruptedException ex) {
                         Logger.getLogger(Launcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -100,7 +110,7 @@ public class Launcher extends JFrame {
                         try {
                         Game.xframe = screen.width;
                         Game.yframe = screen.height;
-                        Game.gameLoop();
+                        Game.gameLoop(fog.isSelected(), terrain.isSelected());
                     } catch (IOException | InterruptedException ex) {
                         Logger.getLogger(Launcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -118,9 +128,10 @@ public class Launcher extends JFrame {
         i.add(image);
         
         //add panels to container
-        pane.add(r, BorderLayout.CENTER);
+        pane.add(r, BorderLayout.WEST);
         pane.add(i, BorderLayout.PAGE_START);
-        pane.add(p, BorderLayout.SOUTH);
+        pane.add(o, BorderLayout.EAST);
+        pane.add(p, BorderLayout.PAGE_END);
     }
      
     /**

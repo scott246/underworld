@@ -19,7 +19,9 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.geom.Area;
 
 /**
  *
@@ -110,6 +112,34 @@ public class Paint {
                     rockList[b].getSize());
         }
         
+        //draw fog of war
+        if (Game.fog){
+            Area fog = new Area(new Rectangle(0, 0, xframe, yframe));
+            //Area center = new Area(new Rectangle(p.x - 20, p.y - 20, p.size + 40, p.size + 40));
+            Area middle1 = new Area(new Rectangle(p.x - 40, p.y - 60, p.size + 80, p.size + 120));
+            Area middle2 = new Area(new Rectangle(p.x - 60, p.y - 40, p.size + 120, p.size + 80));
+            Area light1 = new Area(new Rectangle(p.x - 20, p.y - 40, p.size + 40, p.size + 80));
+            Area light2 = new Area(new Rectangle(p.x - 40, p.y - 20, p.size + 80, p.size + 40));
+            //outer.subtract(new Area(inner1));
+            fog.subtract(middle1);
+            fog.subtract(middle2);
+            light1.subtract(new Area(light2));
+            middle1.subtract(middle2);
+            middle1.subtract(light1);
+            middle2.subtract(light1);
+            middle1.subtract(light2);
+            middle2.subtract(light2);
+
+            graphics.setColor(new Color(0,0,0,255));
+            graphics.fill(fog);
+            graphics.setColor(new Color(0,0,0,128));
+            graphics.fill(middle1);
+            graphics.fill(middle2);
+            graphics.setColor(new Color(0,0,0,0));
+            graphics.fill(light1);
+            graphics.fill(light2);
+        }
+        
         //draw all text
         g.setColor(Color.WHITE);
         //alive time
@@ -198,36 +228,20 @@ public class Paint {
         //game over screen
         if (Game.gameOver.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
-            String text1 = "GAME OVER";
-            String text2 = "==PRESS [r] TO RESTART==";
-            String text3 = "==High Scores==";
-            String text4 = ""+Game.highScore;
-            String text5 = ""+Game.secondHigh;
-            String text6 = ""+Game.thirdHigh;
-            int ptextx = (xframe - metrics.stringWidth(text1))/2;
-            int ptextx2 = (xframe - metrics.stringWidth(text2))/2;
-            int ptextx3 = (xframe - metrics.stringWidth(text3))/2;
-            int ptextx4 = (xframe - metrics.stringWidth(text4))/2;
-            int ptextx5 = (xframe - metrics.stringWidth(text5))/2;
-            int ptextx6 = (xframe - metrics.stringWidth(text6))/2;
-            int ptexty = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent();
-            int ptexty2 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 2;
-            int ptexty3 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 4;
-            int ptexty4 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 5;
-            int ptexty5 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 6;
-            int ptexty6 = (
-                    (yframe - metrics.getHeight())/2) + metrics.getAscent() * 7;
-            graphics.drawString(text1, ptextx, ptexty);
-            graphics.drawString(text2, ptextx2, ptexty2);
-            graphics.drawString(text3, ptextx3, ptexty3);
-            graphics.drawString(text4, ptextx4, ptexty4);
-            graphics.drawString(text5, ptextx5, ptexty5);
-            graphics.drawString(text6, ptextx6, ptexty6);
+            String text1 = "GAME OVER\n"
+                    + "==PRESS [r] TO RESTART==\n"
+                    + "\n"
+                    + "==High Scores==\n"
+                    + ""+Game.highScore+"\n"
+                    + ""+Game.secondHigh+"\n"
+                    + ""+Game.thirdHigh+"\n";
+            int ptexty = yframe/3 + graphics.getFontMetrics().getHeight();
+            for (String line : text1.split("\n")) {
+                graphics.drawString(
+                        line, 
+                        (xframe - metrics.stringWidth(line))/2, 
+                        ptexty+=(graphics.getFontMetrics().getHeight()));
+            }
         }
         //store screen
         if (Game.collisionDetect(p.x, p.y, Store.x, Store.y)) {        
@@ -267,7 +281,7 @@ public class Paint {
         //instructions screen
         String instructions = null;
         if (Game.instructionDisplay) {
-            g.setColor(Color.DARK_GRAY);
+            g.setColor(Color.BLACK);
             if (xframe == 640 && yframe == 480)
                 graphics.setFont(new Font("Courier New", Font.BOLD, 10));
             else
