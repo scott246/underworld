@@ -134,8 +134,28 @@ public class Game extends JPanel {
         //density of rocks (lower = more dense)
         double densityMultiplier = 3;
         
+        //control number of powerups spawned for larger screen sizes
+        double sspm = 0; //sspm = screen size powerup multiplier
+        switch(xframe){
+            case 640: //640x480
+                sspm = 1;
+                break;
+            case 800: //800x600
+                sspm = .866;
+                break;
+            case 1024: //1024x720
+                sspm = .707;
+                break;
+            case 1920: //1920x1080
+                sspm = .5;
+                break;
+            default:
+                sspm = .5;
+                break;
+        }
+
         //density of powerups (lower = less dense)
-        double powerupFrequency = .03;
+        double powerupFrequency = .03 * sspm;
         
         ROCKS = 10000;
         int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
@@ -580,7 +600,7 @@ public class Game extends JPanel {
                 }
                 
                 //move ai
-                if (aiTimer == (int)((100/enemyFPS)) * (level)) {
+                if (aiTimer == (int)((100/enemyFPS)) / (level)) {
                     aiTimer = 0;
                     initAI();
                 }
