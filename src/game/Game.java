@@ -57,6 +57,7 @@ public class Game extends JPanel {
     //screen dimensions
     static int xframe;
     static int yframe;
+    static JFrame frame;
     
     //bigger screen = more enemies
     static double screenSizeMultiplier;
@@ -502,7 +503,7 @@ public class Game extends JPanel {
         super.paintComponent(g);  
         try {
             Paint.paint(g);
-        } catch (IOException | URISyntaxException ex) {
+        } catch (IOException | URISyntaxException | FontFormatException ex) {
             Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -524,7 +525,7 @@ public class Game extends JPanel {
         startTime = System.currentTimeMillis();
         Database.dbConnect();
         Database.dbClean();
-        JFrame frame = new JFrame("Underworld"); 
+        frame = new JFrame("Underworld"); 
         
         frame.addKeyListener(new KeyListener() {
             @Override

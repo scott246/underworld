@@ -59,15 +59,19 @@ public class Player {
         switch(lastDir){
             case 1: //up
                 y += size;
+                lastDir = 3;
                 break;
             case 2: //left
                 x += size;
+                lastDir = 4;
                 break;
             case 3: //down
                 y -= size;
+                lastDir = 1;
                 break;
             case 4: //right
                 x -= size;
+                lastDir = 2;
                 break;
             default:
                 break;
