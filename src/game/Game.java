@@ -7,7 +7,6 @@
 /**
  * TODO:
  * adjust difficulty
- * fix issue where the enemy can knock you through walls
  * add armor/shield feature
  */
 package game;
@@ -656,7 +655,7 @@ public class Game extends JPanel {
                                 Math.random() * enemyList[a].getHP());
                         enemyList[a].setHP(enemyList[a].getHP()-(int)Math.round(
                                 p.minDamage + (
-                                        Math.random() * p.maxDamage)));
+                                        Math.random() * (p.maxDamage-p.minDamage))));
                         if (enemyList[a].getHP() <= 0) {
                             enemiesKilled++;
                             enemyList[a].setX(-enemyList[a].getSize());

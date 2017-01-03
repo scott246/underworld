@@ -26,28 +26,28 @@ public class KeyBindings {
         switch (key) {
                     //w = move up
                     case KeyEvent.VK_W:
-                        if (!paused.get() && !gameOver.get()) {
+                        if (!paused.get() && !gameOver.get() && !Player.moving) {
                             Player.lastDir = 1;
                             Player.movePlayerUp();
                         }
                         break;
                     //a = move left
                     case KeyEvent.VK_A:
-                        if (!paused.get() && !gameOver.get()) {
+                        if (!paused.get() && !gameOver.get() && !Player.moving) {
                             Player.lastDir = 2;
                             Player.movePlayerLeft();
                         }
                         break;
                     //s = move down
                     case KeyEvent.VK_S:
-                        if (!paused.get() && !gameOver.get()) {
+                        if (!paused.get() && !gameOver.get() && !Player.moving) {
                             Player.lastDir = 3;
                             Player.movePlayerDown();
                         }
                         break;
                     //d = move right
                     case KeyEvent.VK_D:
-                        if (!paused.get() && !gameOver.get()) {
+                        if (!paused.get() && !gameOver.get() && !Player.moving) {
                             Player.lastDir = 4;
                             Player.movePlayerRight();
                         }

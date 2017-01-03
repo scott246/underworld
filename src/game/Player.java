@@ -7,6 +7,7 @@ package game;
 
 import static game.Game.xframe;
 import static game.Game.yframe;
+import static game.Game.ROCKS;
 
 /**
  *
@@ -26,18 +27,47 @@ public class Player {
     static int defenseMagic = 0;
     static boolean bow = false;
     static int arrows = 0;
+    static boolean moving = false;
     
     public static void movePlayerLeft() {
-        if (x > 0) x -= size;
+        moving = true;
+        boolean collision = false;
+        for (int a = 0; a < ROCKS; a++){
+            if (Game.collisionDetect(x-size, y, Game.rockList[a].getX(), Game.rockList[a].getY()))
+                collision = true;
+        }
+        if (!collision) x -= size;
+        moving = false;
     }
     public static void movePlayerRight() {
-        if (x < xframe - size * 2) x += size;
+        moving = true;
+        boolean collision = false;
+        for (int a = 0; a < ROCKS; a++){
+            if (Game.collisionDetect(x+size, y, Game.rockList[a].getX(), Game.rockList[a].getY()))
+                collision = true;
+        }
+        if (!collision) x += size;
+        moving = false;
     }
     public static void movePlayerUp() {
-        if (y > 0) y -= size;
+        moving = true;
+        boolean collision = false;
+        for (int a = 0; a < ROCKS; a++){
+            if (Game.collisionDetect(x, y-size, Game.rockList[a].getX(), Game.rockList[a].getY()))
+                collision = true;
+        }
+        if (!collision) y -= size;
+        moving = false;
     }
     public static void movePlayerDown() {
-        if (y < yframe - size * 3) y += size;
+        moving = true;
+        boolean collision = false;
+        for (int a = 0; a < ROCKS; a++){
+            if (Game.collisionDetect(x, y+size, Game.rockList[a].getX(), Game.rockList[a].getY()))
+                collision = true;
+        }
+        if (!collision) y += size;
+        moving = false;
     }
     public static void resetPlayer() {
         size = 20;
