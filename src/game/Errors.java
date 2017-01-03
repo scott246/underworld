@@ -15,5 +15,7 @@ public enum Errors {
     NOARROWS,
     NOBOW,
     NOERROR,
-    NOMAGIC
+    NOMAGIC,
+    HIHP,
+    HIMANA,
 }

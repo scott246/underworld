@@ -19,16 +19,25 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 /**
  *
  * @author Nathan
  */
 public class Paint {
-    public static void paint(Graphics g) {
+    public static void paint(Graphics g) throws IOException, URISyntaxException {
         Graphics2D graphics = (Graphics2D) g;
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
@@ -140,22 +149,16 @@ public class Paint {
             graphics.fill(light2);
         }
         
+        
         //draw all text
-        g.setColor(Color.WHITE);
-        //alive time
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-        String aliveTime = "Time Alive: "+ Integer.toString(
-                (int)(Game.getTimeAlive()/1000));
-        graphics.drawString(aliveTime, 10, 15);
-        //gold
-        g.setColor(Color.YELLOW);
-        graphics.drawString("Gold: "+p.gp, 10, 30);
+        
         //level
+        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
         if (!Game.instructionDisplay){
             g.setColor(Color.WHITE);
             FontMetrics m = g.getFontMetrics(g.getFont());
             String ltext = "==Level " +Game.level+"==";
-            graphics.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
+            graphics.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 30);
         }
         if (Game.instructionDisplay){
             g.setColor(Color.WHITE);
@@ -163,58 +166,79 @@ public class Paint {
             String ltext = "==PRESS [q] TO RETURN TO GAME==";
             graphics.drawString(ltext, (xframe - m.stringWidth(ltext))/2, 45);
         }
+      
+        //HP
+        g.setColor(Color.RED);
+        graphics.fillRect(10, 10, p.hp*2, 20);
+        g.setColor(Color.DARK_GRAY);
+        graphics.drawRect(10, 10, 200, 20);
+        g.setColor(Color.WHITE);
+        String htext = p.hp+" HP";
+        graphics.drawString(htext, 15, 25);
+       
+        //mana
+        g.setColor(Color.BLUE);
+        graphics.fillRect(10, 30, p.mana*2, 20);
+        g.setColor(Color.DARK_GRAY);
+        graphics.drawRect(10, 30, 200, 20);
+        g.setColor(Color.WHITE);
+        String mtext = p.mana+" Mana";
+        graphics.drawString(mtext, 15, 45);
+        
+        //damage
+        g.setColor(Color.WHITE);
+        String datext = p.minDamage+"-"+p.maxDamage+" Damage";
+        graphics.drawString(datext, 10, 80);        
+        
+        //gold
+        g.setColor(Color.YELLOW);
+        graphics.drawString(p.gp + " Gold", 10, 100);
         
         //arrows
         g.setColor(Color.WHITE);
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
-        FontMetrics m1 = g.getFontMetrics(g.getFont());
-        String artext = "Arrows: " + p.arrows;
-        int textx = (xframe - m1.stringWidth(artext))/3;
-        int texty = 15;
-        graphics.drawString(artext, textx, texty);
-        //HP
-        g.setColor(Color.RED);
-        FontMetrics m2 = g.getFontMetrics(g.getFont());
-        String htext = "HP: " + p.hp;
-        int htextx = (xframe - m2.stringWidth(htext))/3;
-        int htexty = 30;
-        graphics.drawString(htext, htextx, htexty);
-        //attack magic
-        g.setColor(Color.RED);
-        FontMetrics m3 = g.getFontMetrics(g.getFont());
-        String atext = "Attack Magic: " + p.attackMagic;
-        int atextx = (xframe - m3.stringWidth(atext))*2/3;
-        int atexty = 15;
-        graphics.drawString(atext, atextx, atexty);
-        //defense magic
-        g.setColor(Color.BLUE);
-        FontMetrics m4 = g.getFontMetrics(g.getFont());
-        String dtext = "Defense Magic: " + p.defenseMagic;
-        int dtextx = (xframe - m4.stringWidth(dtext))*2/3;
-        int dtexty = 30;
-        graphics.drawString(dtext, dtextx, dtexty);
-        //damage
-        graphics.setFont(new Font("Courier New", Font.BOLD, 16));
+        String artext = p.arrows + " Arrows";
+        graphics.drawString(artext, 10, 120);
+        
+        //logo
+        BufferedImage underworld = ImageIO.read(new File(Paint.class.getResource("/images/underworld.png").toURI()));
+        //g.drawImage(underworld, 10, yframe/2, null);
+        g.drawImage(underworld, 10, yframe/2 - 50, 100, 100, null);
+
+        //alive time
         g.setColor(Color.WHITE);
-        FontMetrics m5 = g.getFontMetrics(g.getFont());
-        String datext = "Damage: "+p.minDamage+"-"+p.maxDamage;
-        int datextx = xframe - Rock.size - m5.stringWidth(datext);
-        int datexty = 15;
-        graphics.drawString(datext, datextx, datexty);
-        //mana
-        g.setColor(Color.BLUE);
-        FontMetrics m6 = g.getFontMetrics(g.getFont());
-        String mtext = "Mana: "+p.mana;
-        int mtextx = xframe - Rock.size - m6.stringWidth(mtext);
-        int mtexty = 30;
-        graphics.drawString(mtext, mtextx, mtexty);
+        String aliveTime = Integer.toString(
+                (int)(Game.getTimeAlive()/1000));
+        graphics.drawString(aliveTime, 10, yframe - graphics.getFontMetrics().getHeight() * 3);
+
+        //attack magic
+        g.setColor(Color.WHITE);
+        String atext = p.attackMagic + " Attack";
+        graphics.drawString(atext, 10, yframe - graphics.getFontMetrics().getHeight() * 5);
+        
+        //defense magic
+        g.setColor(Color.WHITE);
+        String dtext = p.defenseMagic + " Defense";
+        graphics.drawString(dtext, 10, yframe - graphics.getFontMetrics().getHeight() * 4);
+
         //enemies killed
         g.setColor(Color.LIGHT_GRAY);
         FontMetrics m7 = g.getFontMetrics(g.getFont());
-        String etext = "Enemies Killed: " + Game.enemiesKilled;
+        String etext = Game.enemiesKilled + " Enemies Killed";
         int etextx = xframe - Rock.size - m7.stringWidth(etext);
         int etexty = yframe-m7.getHeight() * 2;
         graphics.drawString(etext, etextx, etexty);
+        
+        //enemies remaining
+        g.setColor(Color.RED);
+        FontMetrics m8 = g.getFontMetrics(g.getFont());
+        String qtext = Game.enemiesRemaining + " Enemies Remaining";
+        int qtextx = xframe - Rock.size - m8.stringWidth(qtext);
+        int qtexty = m8.getHeight() * 2;
+        graphics.drawString(qtext, qtextx, qtexty);
+        
+        
+        //screens
+        
         //pause screen
         g.setColor(Color.WHITE);
         if (Game.paused.get()){

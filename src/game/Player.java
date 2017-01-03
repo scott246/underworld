@@ -14,7 +14,7 @@ import static game.Game.yframe;
  */
 public class Player {
     static int size = 20;
-    static int hp = 50;
+    static int hp = 100;
     static int minDamage = 1;
     static int maxDamage = 7;
     static int x = Game.roundLocation((int)xframe/2, size);
@@ -41,7 +41,7 @@ public class Player {
     }
     public static void resetPlayer() {
         size = 20;
-        hp = 50;
+        hp = 100;
         minDamage = 1;
         maxDamage = 7;
         x = Game.roundLocation((int)xframe/2, size);

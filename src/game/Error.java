@@ -41,6 +41,16 @@ public class Error {
                 activeError = Errors.NOMAGIC;
                 Game.information = "You don't have this magic";
                 break;
+            case HIHP:
+                errors = true;
+                activeError = Errors.HIHP;
+                Game.information = "You can't have more than 100 HP";
+                break;
+            case HIMANA:
+                errors = true;
+                activeError = Errors.HIMANA;
+                Game.information = "You can't have more than 100 Mana";
+                break;
             case NOERROR:
                 errors = false;
                 activeError = Errors.NOERROR;

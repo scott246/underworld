@@ -244,7 +244,7 @@ public class KeyBindings {
                     //buy 1 hp if in store    
                     case KeyEvent.VK_1: 
                         if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.hpPrice) {
+                            if (Player.gp >= Store.hpPrice && Player.hp < 100) {
                                 Player.gp -= Store.hpPrice;
                                 Player.hp += (2*Game.level);
                             }
@@ -252,17 +252,25 @@ public class KeyBindings {
                                 Error.activeError = Errors.NOGOLD;
                                 Error.errors = true;
                             }
+                            else if (Player.hp >= 100){
+                                Error.activeError = Errors.HIHP;
+                                Error.errors = true;
+                            }
                         }
                         break;
                     //buy 1 mana if in store    
                     case KeyEvent.VK_2: 
                         if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.manaPrice) {
+                            if (Player.gp >= Store.manaPrice && Player.mana < 100) {
                                 Player.gp -= Store.manaPrice;
                                 Player.mana += (2*Game.level);
                             }
                             else if (Player.gp < Store.manaPrice){
                                 Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
+                            else if (Player.mana >= 100){
+                                Error.activeError = Errors.HIMANA;
                                 Error.errors = true;
                             }
                         }

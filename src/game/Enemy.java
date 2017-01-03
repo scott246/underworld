@@ -10,7 +10,7 @@ package game;
  * @author Nathan
  */
 public class Enemy {
-    int maxHP = 30;
+    int maxHP = 100;
     int hp = 100;
     int size = 20;
     int x = 0;

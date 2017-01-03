@@ -8,6 +8,7 @@
  * TODO:
  * adjust difficulty
  * fix issue where the enemy can knock you through walls
+ * add armor/shield feature
  */
 package game;
 
@@ -16,6 +17,7 @@ import java.awt.event.KeyListener;
 import java.awt.Graphics;
 import java.awt.event.*;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,6 +70,7 @@ public class Game extends JPanel {
     static boolean terrain = false;
     static int level = 0;
     static int enemiesKilled = 0;
+    static int enemiesRemaining = 0;
     static public AtomicBoolean paused;
     static public AtomicBoolean gameOver;
     static public Thread thread;
@@ -164,10 +167,17 @@ public class Game extends JPanel {
                 while(power > 0) {
                     
                     //use the rocks to generate a border
-                    if (a == 0 || b == Rock.size || b == Rock.size * 2 ||
-                        b == 0 || 
+                    if (
+                        //left border
+                        a == 0 || a == Rock.size || a == Rock.size * 2 ||
+                        a == Rock.size * 3 || a == Rock.size * 4 || a == Rock.size * 5 ||
+                        a == Rock.size * 6 || a == Rock.size * 7 ||
+                        //top border
+                        b == 0 || b == Rock.size || b == Rock.size * 2 ||
+                        //right border
                         a == roundLocation(xframe, Rock.size)-Rock.size ||
                         a == roundLocation(xframe, Rock.size) ||
+                        //bottom border
                         b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
                         b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
                         b == roundLocation(yframe, Rock.size)) {
@@ -275,10 +285,11 @@ public class Game extends JPanel {
             
             //generate a random x and y variable within the border
             int tempX = roundLocation(
-                    (int) (Math.random() * xframe - Rock.size * 3) + Rock.size,
+                    (int) (Math.random() * (xframe - Rock.size * 8)) + 
+                            Rock.size * 7,
                     e.getSize());
             int tempY = roundLocation(
-                    (int) (Math.random() * yframe - Rock.size * 5) +
+                    (int) (Math.random() * (yframe - Rock.size * 5)) +
                             Rock.size * 3,
                     e.getSize());
             
@@ -327,7 +338,7 @@ public class Game extends JPanel {
 //            
             
             //set enemy properties
-            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level * .75))));
+            e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level * .15))));
             e.setX(tempX);
             e.setY(tempY);
             e.setLastDir(0);
@@ -489,7 +500,11 @@ public class Game extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);  
-        Paint.paint(g);
+        try {
+            Paint.paint(g);
+        } catch (IOException | URISyntaxException ex) {
+            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     public static void gameLoop(boolean torchEnabled, boolean rocksEnabled) 
@@ -534,11 +549,22 @@ public class Game extends JPanel {
         generateEnemies();
         double enemyFPS = 2;
         final int gameFPS = 60;
+        enemiesRemaining = ENEMIES;
 
 
         //MAIN GAME LOOP
         Runnable runnable = () -> {
             while (true) {
+                
+                //player hp can't go over 100
+                if (p.hp > 100) {
+                    p.hp = 100;
+                }
+                
+                //player mana can't be more than 100
+                if (p.mana > 100) {
+                    p.mana = 100;
+                }
                 
                 //handle game pausing
                 if (paused.get()) {
@@ -586,6 +612,8 @@ public class Game extends JPanel {
                     }
                 }
                 
+                enemiesRemaining = ENEMIES - deadEnemies;
+                
                 //if all enemies are killed, make a new map
                 if (ENEMIES == deadEnemies) {
                     frame.remove(frame);
@@ -604,6 +632,7 @@ public class Game extends JPanel {
                     }
                     generateMap();                    
                     generateEnemies();
+                    enemiesRemaining = ENEMIES-enemiesKilled;
                 }
                 
                 //move ai
@@ -653,16 +682,21 @@ public class Game extends JPanel {
                             p.y, 
                             powerupList[a].getX(), 
                             powerupList[a].getY())) {
-                        powerupList[a].setX(-Powerup.size);
-                        powerupList[a].setY(-Powerup.size);
+                        boolean much = false;
                         switch(powerupList[a].getType()) {
                             case GOLD:
                                 p.gp += (int) Math.ceil(
                                         Math.random() * level * 10);
                                 break;
                             case HEALTH:
-                                p.hp += (int) Math.ceil(
-                                        Math.random() * level * 10);
+                                if (p.hp < 100){
+                                    p.hp += (int) Math.ceil(
+                                        Math.random() * level * 10); 
+                                }
+                                else {
+                                    Error.displayError(Errors.HIHP);
+                                    much = true;
+                                }
                                 break;
                             case MINATTACK:
                                 p.minDamage += (int) Math.ceil(
@@ -676,10 +710,21 @@ public class Game extends JPanel {
                                         Math.random() * level * 5);
                                 break;
                             case MANA:
-                                p.mana += (int) Math.ceil(
+                                if (p.mana < 100){
+                                    p.mana += (int) Math.ceil(
                                         Math.random() * level * 10);
+                                }
+                                else {
+                                    Error.displayError(Errors.HIMANA);
+                                    much = true;
+                                }
                                 break;
                         }
+                        if (!much){
+                            powerupList[a].setX(-Powerup.size);
+                            powerupList[a].setY(-Powerup.size);
+                        }
+                        
                     }
                 }
                 
