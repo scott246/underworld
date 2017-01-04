@@ -11,7 +11,7 @@ The game has a launcher once it is first started up (by double clicking on the .
   - otherwise it's an open level
 
 # Gameplay
-The game is a retro-style pixel 2D RPG. The point of the game is to move the blue square (you) around and destroy all the red squares (enemy) by attacking (bumping into them or shooting them with arrows or magic). You may visit the green square (store) and buy upgrades with gold. Gold is found through yellow squares (powerups), which produce not only gold but other upgrades as well, marked with a "G" for gold, or another character for another type of powerup (see powerups section). The point of the game is to clear all enemies from a level using whatever means necessary (magic, basic attack, arrows, etc.). Clearing all enemies will take you to a completely different randomly generated level with more and more powerful enemies with greater rewards upon killing them, and more powerful powerups.
+The game is a retro-style pixel 2D RPG. The point of the game is to move the blue square (you) around and destroy all the red squares (enemy) by attacking (bumping into them or shooting them with arrows or magic or traps). You may visit the green square (store) and buy upgrades/items with gold. Gold is found through yellow squares (powerups), which produce not only gold but other upgrades as well, marked with a "G" for gold, or another character for another type of powerup (see powerups section). The point of the game is to clear all enemies from a level using whatever means necessary (magic, basic attack, arrows, etc.). Clearing all enemies will take you to a completely different randomly generated level with more and more powerful enemies with greater rewards upon killing them, and more powerful powerups.
 
 # HUD
 The game's HUD is located mostly in the left side of the screen, with a few elements in the lower and upper portions. Currently it tracks 
@@ -32,7 +32,7 @@ During certain interactions, some text may pop up next to your character. These 
 You are a blue square. You have a number on your character which represents your HP level. You can move with WASD, shoot arrows with IJKL (requires a bow before you can use), and use attack and defense magic with N and M, respectively (once you have the magic and enough mana). You can also press R to restart the game and Q to display instructions.
 
 # Enemies
-Enemies are a red square. They have a number which represents their respective HP levels. They move randomly; you can attack them by bumping into them (which reduces your HP level as well as theirs) or by shooting arrows at them or by using attack magic. The amount of damage you do attacking them is a randomly generated number between your min and max damage. The amount of damage you take when attacking is a randomly generated number based on the enemy's HP (an enemy with 50HP can do anywhere from 0-50 damage to your character) if you bump into them -- using attack magic or archery will not cause your HP to fall. Once an enemy is killed, you will receive a gold bonus (i.e. if you are level 3 they will drop up to 3 gold upon death) and you will receive a random health bonus (random number * your level * 10).
+Enemies are a red square. They have a number which represents their respective HP levels. They move randomly; you can attack them by bumping into them (which reduces your HP level as well as theirs) or by shooting arrows at them or by using attack magic or setting traps. The amount of damage you do attacking them is a randomly generated number between your min and max damage. The amount of damage you take when attacking is a randomly generated number based on the enemy's HP (an enemy with 50HP can do anywhere from 0-50 damage to your character) if you bump into them -- using attack magic, archery, or traps will not cause your HP to fall. Once an enemy is killed, you will receive a gold bonus (i.e. if you are level 3 they will drop up to 3 gold upon death) and you will receive a random health bonus (random number * your level * 10).
 
 # Store
 You start on a green square, which is the store. Here you can buy HP, mana, arrows, magic, a bow (which you only need to buy once), or an upgrade to your minimum and maximum damage. Enemies cannot enter the store, therefore, you can use this space to get away if you need a temporary hiding spot.
@@ -49,6 +49,9 @@ The amount of upgrade is random, but based on your level.
 
 # Magic
 Pressing the attack magic button (N) requires 20 mana and at least 1 attack magic for anything to happen. Fulfilling the requirements, it will attack anything within three square blocks of you for your maximum damage, i.e. having a max damage of 15 will cause anything within three blocks of you to lose 15HP. Defense magic (M) requires 10 mana and at least 1 defense magic; using that will cause your player to gain (30 * your level) in health.
+
+# Traps
+Pressing the T key and having a trap in your inventory will cause your player to lay a trap on the square you're on. You cannot be affected by traps, only enemies. An enemy stepping on your trap will cause them to lose your max damage in health. You can only get traps in the store, and can only have 10 active traps at a time.
 
 # Terminal
 There is an option for developers and testers to use a terminal by pressing the \` button. There are keywords for increasing certain player stats... but I've said too much already ;).
