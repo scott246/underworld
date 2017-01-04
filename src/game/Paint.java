@@ -28,7 +28,11 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.invoke.MethodHandles;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -41,8 +45,11 @@ import javax.swing.JPanel;
  * @author Nathan
  */
 public class Paint {
+    static Area background[][];
+    static Color bgcolor[][];
     public static void paint(Graphics g) throws IOException, URISyntaxException, FontFormatException {
         Graphics2D graphics = (Graphics2D) g;
+        
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         
@@ -68,9 +75,29 @@ public class Paint {
         genv.registerFont(munroXtraSmall);
         
         //draw background
-        g.setColor(Color.GRAY);
-        BufferedImage background = ImageIO.read(new File(Paint.class.getResource("/images/stone.jpg").toURI()));
-        graphics.drawImage(background, 0, 0, xframe, yframe, null);
+        if (!Game.backgroundDrawn){
+            background = new Area[xframe][yframe];
+            bgcolor = new Color[xframe][yframe];
+            for (int a = 0; a < xframe; a+=10){
+                for (int b = 0; b < yframe; b+=10) {
+                    background[a][b] = new Area(new Rectangle(a,b,10,10));
+                    int grayscale = (int)(64+Math.random()*32);
+                    Color c = new Color(grayscale,grayscale,grayscale);
+                    bgcolor[a][b] = c;
+                }
+            }       
+            Game.backgroundDrawn = true;
+        }
+        
+        for (int a = 0; a < xframe; a+=10) {
+            for (int b = 0; b < yframe; b+=10) {
+                g.setColor(bgcolor[a][b]);
+                graphics.fill(background[a][b]);
+            }
+        }
+        
+
+        
         
         //draw enemies
         g.setFont(munroDisplay);
@@ -158,7 +185,7 @@ public class Paint {
                     rockList[b].getSize());
         }
         
-        //draw fog of war
+        //draw torch mode
         if (Game.fog){
             Area fog = new Area(new Rectangle(0, 0, xframe, yframe));
             //Area center = new Area(new Rectangle(p.x - 20, p.y - 20, p.size + 40, p.size + 40));
@@ -246,10 +273,6 @@ public class Paint {
         g.setColor(Color.WHITE);
         String ttext = p.traps + " Traps";
         graphics.drawString(ttext, 10, 140);
-        
-        //logo
-        BufferedImage underworld = ImageIO.read(new File(Paint.class.getResource("/images/underworld.png").toURI()));
-        g.drawImage(underworld, 10, yframe/2, 140, 140, null);
 
         //alive time
         g.setColor(Color.WHITE);
@@ -287,7 +310,7 @@ public class Paint {
         //screens
         
         //pause screen
-        g.setColor(Color.LIGHT_GRAY);
+        g.setColor(Color.WHITE);
         if (Game.paused.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
             String text1 = "PAUSED";
@@ -299,7 +322,7 @@ public class Paint {
         //game over screen
         if (Game.gameOver.get()){
             FontMetrics metrics = g.getFontMetrics(g.getFont());
-            g.setColor(Color.LIGHT_GRAY);
+            g.setColor(Color.WHITE);
             String text1 = "GAME OVER\n"
                     + "==PRESS [r] TO RESTART==\n"
                     + "\n"
@@ -335,7 +358,7 @@ public class Paint {
                     + "[8] Buy Arrow: "+Store.arrowPrice+" Gold\n"
                     + "[9] Buy Trap: "+Store.trapPrice+" Gold\n";
             int xtextx = 10;
-            int ytexty = 150;
+            int ytexty = yframe/2 - (graphics.getFontMetrics().getHeight() * 9)/2;
             for (String line : storeMenu.split("\n")) {
                 graphics.drawString(
                         line, 
@@ -345,7 +368,7 @@ public class Paint {
         }
         //information display       
         graphics.setFont(munroDisplay);
-        g.setColor(Color.LIGHT_GRAY);
+        g.setColor(Color.WHITE);
         int xtextx;
         if (p.x + (graphics.getFontMetrics().stringWidth(Game.information)) > xframe)
             xtextx = p.x - (graphics.getFontMetrics().stringWidth(Game.information));
