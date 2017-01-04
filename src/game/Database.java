@@ -52,7 +52,8 @@ public class Database {
 
             String u = "CREATE TABLE IF NOT EXISTS highscores "
                 + "(date DATETIME, "
-                + "enemiesKilled INTEGER);";
+                + "enemiesKilled INTEGER, "
+                + "level INTEGER);";
             try (Statement st = conn.createStatement()) {
                 st.executeUpdate(u);
             }
@@ -71,7 +72,7 @@ public class Database {
     }
     
     /**
-     * Deletes all entries that are less than the third highest score in order
+     * Deletes all entries that are less than the fifth highest score in order
      * to keep the database small.
      * @throws java.io.IOException
      */
@@ -83,7 +84,7 @@ public class Database {
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "DELETE FROM highscores "
-                    + "WHERE enemiesKilled < "+getHighScore(3)+";";
+                    + "WHERE enemiesKilled < "+getHighScore(5)+";";
             Statement st = conn.createStatement();
             st.executeUpdate(u);
             conn.close();
@@ -96,8 +97,9 @@ public class Database {
     /**
      * Add score to the database
      * @param score
+     * @param level
      */
-    public static void addScore(int score) {
+    public static void addScore(int score, int level) {
         Connection conn = null;
         try {
             //get current date
@@ -110,7 +112,7 @@ public class Database {
             // create a connection to the database
             conn = DriverManager.getConnection(url);
             String u = "INSERT INTO highscores "
-                    + "VALUES ('"+dtf.format(now)+"', "+score+");";
+                    + "VALUES ('"+dtf.format(now)+"', "+score+", "+level+");";
             Statement st = conn.createStatement();
             st.executeUpdate(u);
             conn.close();

@@ -8,6 +8,7 @@
  * TODO:
  * adjust difficulty
  * add armor/shield feature
+ * add traps
  */
 package game;
 
@@ -77,11 +78,7 @@ public class Game extends JPanel {
     static boolean instructionDisplay = false;
     static boolean playerIsDead = false;
     static String information = "";
-    
-    //high score variables
-    static int highScore = 0;
-    static int secondHigh = 0;
-    static int thirdHigh = 0;
+    static String terminalCommand = "";
 
     public Game(int width, int height) throws IOException {
         xframe = width;
@@ -534,8 +531,12 @@ public class Game extends JPanel {
             @Override
             //KEY BINDINGS
             public void keyPressed(KeyEvent e) {
-                //go find the key binding
-                KeyBindings.bind(e.getKeyCode());
+                try {
+                    //go find the key binding
+                    KeyBindings.bind(e.getKeyCode());
+                } catch (FontFormatException | IOException ex) {
+                    Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
@@ -555,6 +556,60 @@ public class Game extends JPanel {
         //MAIN GAME LOOP
         Runnable runnable = () -> {
             while (true) {
+                
+                //handle terminal input
+                if (!terminalCommand.equals("")){
+                    switch(terminalCommand){
+                        case "kill":
+                            p.hp = 0;
+                            Database.addScore(enemiesKilled, level);
+                            gameOver.set(true);
+                            break;
+                        case "stickyfingers":
+                            p.gp += 100;
+                            break;
+                        case "revive":
+                            p.hp += 100;
+                            break;
+                        case "quiver":
+                            p.arrows += 100;
+                            break;
+                        case "wizard":
+                            p.mana += 100;
+                            break;
+                        case "freebow":
+                            p.bow = true;
+                            break;
+                        case "lildamage":
+                            p.minDamage = p.maxDamage;
+                            break;
+                        case "massivedamage":
+                            p.maxDamage += 20;
+                            break;
+                        case "saviour":
+                            p.defenseMagic += 20;
+                            p.mana = 200;
+                            break;
+                        case "angelofdeath":
+                            p.attackMagic += 20;
+                            p.mana = 200;
+                            break;
+                        case "h4x0r":
+                            p.gp += 100;
+                            p.hp += 100;
+                            p.mana += 100;
+                            p.bow = true;
+                            p.arrows += 100;
+                            p.maxDamage += 20;
+                            p.minDamage = p.maxDamage;
+                            p.attackMagic += 20;
+                            p.defenseMagic += 20;
+                            break;
+                        default:
+                            break;
+                    }
+                    terminalCommand = "";
+                }
                 
                 //player hp can't go over 100
                 if (p.hp > 100) {
@@ -664,10 +719,7 @@ public class Game extends JPanel {
                             p.gp += Math.ceil(Math.random() * level);
                         }
                         if (p.hp <= 0) {
-                            Database.addScore(enemiesKilled);
-                            highScore = Database.getHighScore(1);
-                            secondHigh = Database.getHighScore(2);
-                            thirdHigh = Database.getHighScore(3);
+                            Database.addScore(enemiesKilled, level);
                             gameOver.set(true);
                         }
                         p.knockbackPlayer();

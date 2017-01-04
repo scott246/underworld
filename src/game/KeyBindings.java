@@ -11,18 +11,29 @@ import static game.Game.instructionDisplay;
 import static game.Game.level;
 import static game.Game.p;
 import static game.Game.paused;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.JTextField;
 
 /**
  * All the key bindings.
  * @author Nathan
  */
 public class KeyBindings {
+    
+    public static boolean terminalVisible = true;
 
     /**
      * Gets the key bindings.
      * @param key
      */
-    public static void bind(int key){
+    public static void bind(int key) throws FontFormatException, IOException{
         switch (key) {
                     //w = move up
                     case KeyEvent.VK_W:
@@ -67,6 +78,40 @@ public class KeyBindings {
                         }
                         if (!instructionDisplay) instructionDisplay = true;
                         else if (instructionDisplay) instructionDisplay = false;
+                        break;
+                    //` = terminal
+                    case KeyEvent.VK_BACK_QUOTE:
+                        if (!paused.get()){
+                            Game.startPauseTime = System.currentTimeMillis();
+                            paused.set(true);
+                        }
+                        
+                        JTextField tf = new JTextField(20);
+                        tf.setSize(200, 20);
+                        Font munro = Font.createFont(Font.TRUETYPE_FONT, Paint.class.getResourceAsStream("/fonts/Munro.ttf"));
+                        munro = munro.deriveFont(18f);
+                        tf.setFont(munro);
+                        Game.frame.add(tf, BorderLayout.BEFORE_FIRST_LINE);
+                        Game.frame.setLayout(new FlowLayout());
+                        tf.setVisible(true);
+                        tf.requestFocusInWindow();
+                        Action action = new AbstractAction()
+                        {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                tf.setVisible(false);
+                                Game.frame.requestFocusInWindow();
+                                Game.terminalCommand = tf.getText().trim().toLowerCase();
+                                paused.set(false);
+                                Game.pauseTime += System.currentTimeMillis() - Game.startPauseTime;
+                                synchronized(Game.thread){
+                                   Game.thread.notify(); 
+                                }
+                                Game.frame.remove(tf);
+                                Game.frame.setLayout(null);
+                            }
+                        };
+                        tf.addActionListener(action);
                         break;
                     //r = restart game
                     case KeyEvent.VK_R:

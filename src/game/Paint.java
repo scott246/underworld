@@ -109,7 +109,7 @@ public class Paint {
         
         //draw arrow
         g.setColor(Color.BLACK);
-        graphics.fillOval(Arrow.x + 5, Arrow.y + 5, Arrow.size, Arrow.size);
+        graphics.fillRect(Arrow.x + 5, Arrow.y + 5, Arrow.size, Arrow.size);
         
         //draw attack magic
         if (Magic.attackMagicExists){
@@ -291,9 +291,11 @@ public class Paint {
                     + "==PRESS [r] TO RESTART==\n"
                     + "\n"
                     + "==High Scores==\n"
-                    + ""+Game.highScore+"\n"
-                    + ""+Game.secondHigh+"\n"
-                    + ""+Game.thirdHigh+"\n";
+                    + Database.getHighScore(1)+"\n"
+                    + Database.getHighScore(2)+"\n"
+                    + Database.getHighScore(3)+"\n"
+                    + Database.getHighScore(4)+"\n"
+                    + Database.getHighScore(5)+"\n";
             int ptexty = yframe/3 + graphics.getFontMetrics().getHeight();
             for (String line : text1.split("\n")) {
                 graphics.drawString(
