@@ -131,6 +131,14 @@ public class Paint {
             }
         }
         
+        //draw trap
+        g.setColor(Color.ORANGE);
+        for (int i = 0; i < Trap.MAXTRAPS; i++){
+            if (Trap.x[i] != 0 && Trap.y[i] != 0){
+                graphics.fillRect(Trap.x[i] + 5, Trap.y[i] + 5, Trap.size, Trap.size);
+            }
+        }
+        
         //draw player
         g.setColor(Color.BLUE);
         graphics.fillRect(p.x, p.y, p.size, p.size);
@@ -234,6 +242,11 @@ public class Paint {
         String artext = p.arrows + " Arrows";
         graphics.drawString(artext, 10, 120);
         
+        //traps
+        g.setColor(Color.WHITE);
+        String ttext = p.traps + " Traps";
+        graphics.drawString(ttext, 10, 140);
+        
         //logo
         BufferedImage underworld = ImageIO.read(new File(Paint.class.getResource("/images/underworld.png").toURI()));
         g.drawImage(underworld, 10, yframe/2, 140, 140, null);
@@ -319,9 +332,10 @@ public class Paint {
                     + "[6] Buy Defense Magic: "+Store.defenseMagicPrice+
                     " Gold\n"
                     + "[7] Buy a Bow: "+Store.bowPrice+" Gold\n"
-                    + "[8] Buy Arrow: "+Store.arrowPrice+" Gold\n";
+                    + "[8] Buy Arrow: "+Store.arrowPrice+" Gold\n"
+                    + "[9] Buy Trap: "+Store.trapPrice+" Gold\n";
             int xtextx = 10;
-            int ytexty = 140;
+            int ytexty = 150;
             for (String line : storeMenu.split("\n")) {
                 graphics.drawString(
                         line, 
@@ -356,10 +370,11 @@ public class Paint {
                     "==CONTROLS==\n"
                     + "[wasd] - move\n"
                     + "[ijkl] - shoot arrows (requires a bow)\n"
-                    + "[1-8] - buy item (while in the store)\n"
+                    + "[1-9] - buy item (while in the store)\n"
                     + "[q] - toggle instructions (don't worry, the game is paused)\n"
                     + "[n] - use attack magic (requires 20 mana)\n"
                     + "[m] - use defense magic (requires 10 mana)\n"
+                    + "[t] - place trap\n"
                     + "[esc] - pause\n"
                     + "[r] - restart game\n"
                     + "==ENTITIES==\n"
@@ -371,7 +386,7 @@ public class Paint {
                     + "==GAMEPLAY==\n"
                     + "Navigate through the dungeon, kill all the enemies to get to the next level,\n"
                     + "get through as many levels as possible before you inevitably die.";
-            int y = Rock.size * 3;
+            int y = Rock.size * 2;
             for (String line : instructions.toUpperCase().split("\n")) {
                 graphics.drawString(line, xframe/2 - graphics.getFontMetrics().stringWidth(line)/2, y+=graphics.getFontMetrics().getHeight());
             }

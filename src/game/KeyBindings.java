@@ -12,6 +12,7 @@ import static game.Game.level;
 import static game.Game.p;
 import static game.Game.paused;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontFormatException;
@@ -87,6 +88,8 @@ public class KeyBindings {
                         }
                         
                         JTextField tf = new JTextField(20);
+                        tf.setBackground(Color.BLACK);
+                        tf.setForeground(Color.RED);
                         tf.setSize(200, 20);
                         Font munro = Font.createFont(Font.TRUETYPE_FONT, Paint.class.getResourceAsStream("/fonts/Munro.ttf"));
                         munro = munro.deriveFont(18f);
@@ -122,9 +125,18 @@ public class KeyBindings {
                         Game.startTime = System.currentTimeMillis();
                         Game.pauseTime = 0;
                         Game.enemiesKilled = 0;
+                        Trap.resetTraps();
                         Player.resetPlayer();
                         break;
-                        
+                    //t = use trap
+                    case KeyEvent.VK_T:
+                        if (!paused.get() && !gameOver.get() && Player.traps > 0) {
+                            Trap.placeTrap();
+                        }
+                        else if (Player.traps <= 0) {
+                            Error.displayError(Errors.NOTRAPS);
+                        }
+                        break;
                     //n = use attack magic
                     case KeyEvent.VK_N:
                         if (Player.mana >= 20 && Player.attackMagic >= 1) {
@@ -398,6 +410,18 @@ public class KeyBindings {
                                 Player.arrows += 1;
                             }
                             else if (Player.gp < Store.arrowPrice){
+                                Error.activeError = Errors.NOGOLD;
+                                Error.errors = true;
+                            }
+                        }
+                        break;
+                    case KeyEvent.VK_9:
+                        if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
+                            if (Player.gp >= Store.trapPrice) {
+                                Player.gp -= Store.trapPrice;
+                                Player.traps += 1;
+                            }
+                            else if (Player.gp < Store.trapPrice){
                                 Error.activeError = Errors.NOGOLD;
                                 Error.errors = true;
                             }

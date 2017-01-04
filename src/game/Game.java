@@ -9,6 +9,7 @@
  * adjust difficulty
  * add armor/shield feature
  * add traps
+ * fix input lag
  */
 package game;
 
@@ -426,6 +427,7 @@ public class Game extends JPanel {
         f.setVisible(true);
         level++;
         aiTimer = 0;
+        Trap.resetTraps();
     }
     
     /**
@@ -594,6 +596,9 @@ public class Game extends JPanel {
                             p.attackMagic += 20;
                             p.mana = 200;
                             break;
+                        case "trapqueen":
+                            p.traps += 20;
+                            break;
                         case "h4x0r":
                             p.gp += 100;
                             p.hp += 100;
@@ -604,6 +609,7 @@ public class Game extends JPanel {
                             p.minDamage = p.maxDamage;
                             p.attackMagic += 20;
                             p.defenseMagic += 20;
+                            p.traps += 20;
                             break;
                         default:
                             break;
@@ -712,9 +718,7 @@ public class Game extends JPanel {
                                 p.minDamage + (
                                         Math.random() * (p.maxDamage-p.minDamage))));
                         if (enemyList[a].getHP() <= 0) {
-                            enemiesKilled++;
-                            enemyList[a].setX(-enemyList[a].getSize());
-                            enemyList[a].setY(-enemyList[a].getSize());
+                            Enemy.removeEnemy(a);
                             p.hp += Math.ceil(Math.random() * (10 * level));
                             p.gp += Math.ceil(Math.random() * level);
                         }
@@ -822,6 +826,22 @@ public class Game extends JPanel {
                                 powerupList[d].getX(), 
                                 powerupList[d].getY())){
                             enemyList[b].knockbackEnemy();
+                        }
+                    }
+                    
+                    //enemy collides with trap, spring it
+                    for (int e = 0; e < Trap.MAXTRAPS; e++){
+                        if (collisionDetect(
+                                enemyList[b].getX(), 
+                                enemyList[b].getY(), 
+                                Trap.x[e], 
+                                Trap.y[e])){
+                            Trap.springTrap(enemyList[b]);
+                            if (enemyList[b].getHP() <= 0) {
+                                Enemy.removeEnemy(b);
+                                p.hp += Math.ceil(Math.random() * (10 * level));
+                                p.gp += Math.ceil(Math.random() * level);
+                            }
                         }
                     }
                     

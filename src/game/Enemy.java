@@ -5,6 +5,9 @@
  */
 package game;
 
+import static game.Game.enemiesKilled;
+import static game.Game.enemyList;
+
 /**
  *
  * @author Nathan
@@ -46,6 +49,12 @@ public class Enemy {
     }
     public void setLastDir(int lastDir1) {
         lastDir = lastDir1;
+    }
+    
+    public static void removeEnemy(int a) {
+        enemiesKilled++;
+        enemyList[a].setX(-enemyList[a].getSize());
+        enemyList[a].setY(-enemyList[a].getSize());
     }
 
     public void knockbackEnemy(){

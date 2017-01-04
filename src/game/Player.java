@@ -27,6 +27,7 @@ public class Player {
     static int defenseMagic = 0;
     static boolean bow = false;
     static int arrows = 0;
+    static int traps = 0;
     static boolean moving = false;
     
     public static void movePlayerLeft() {
@@ -83,6 +84,7 @@ public class Player {
         defenseMagic = 0;
         bow = false;
         arrows = 0;
+        traps = 0;
     }
     
     public static void knockbackPlayer() {

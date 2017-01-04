@@ -41,6 +41,11 @@ public class Error {
                 activeError = Errors.NOMAGIC;
                 Game.information = "You don't have this magic";
                 break;
+            case NOTRAPS:
+                errors = true;
+                activeError = Errors.NOTRAPS;
+                Game.information = "You don't have any traps";
+                break;
             case HIHP:
                 errors = true;
                 activeError = Errors.HIHP;
@@ -50,6 +55,11 @@ public class Error {
                 errors = true;
                 activeError = Errors.HIMANA;
                 Game.information = "You can't have more than 100 Mana";
+                break;
+            case HITRAPS:
+                errors = true;
+                activeError = Errors.HITRAPS;
+                Game.information = "You can't have more than 10 traps set";
                 break;
             case NOERROR:
                 errors = false;
