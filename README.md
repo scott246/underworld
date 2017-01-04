@@ -50,4 +50,7 @@ The amount of upgrade is random, but based on your level.
 # Magic
 Pressing the attack magic button (N) requires 20 mana and at least 1 attack magic for anything to happen. Fulfilling the requirements, it will attack anything within three square blocks of you for your maximum damage, i.e. having a max damage of 15 will cause anything within three blocks of you to lose 15HP. Defense magic (M) requires 10 mana and at least 1 defense magic; using that will cause your player to gain (30 * your level) in health.
 
+# Terminal
+There is an option for developers and testers to use a terminal by pressing the \` button. There are keywords for increasing certain player stats... but I've said too much already ;).
+
 # Good luck!
