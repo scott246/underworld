@@ -25,6 +25,7 @@ The game's HUD is located mostly in the left side of the screen, with a few elem
 - attack and defense magic
 - time alive
 - enemies killed
+
 During certain interactions, some text may pop up next to your character. These are errors, such as when you're trying to purchase something but don't have enough gold, trying to use magic without enough mana, trying to collect more than 100 HP/mana, etc.
 
 # Your Character
@@ -43,6 +44,7 @@ Powerups are randomly generated throughout the map as yellow squares. They can g
 - minimum damage (-)
 - maximum damage (+)
 - gold (G)
+
 The amount of upgrade is random, but based on your level.
 
 # Magic
