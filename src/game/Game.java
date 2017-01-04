@@ -8,8 +8,9 @@
  * TODO:
  * adjust difficulty
  * add armor/shield feature
- * add traps
  * fix input lag
+ * ensure there's always a path to everywhere
+ * add more animation
  */
 package game;
 
@@ -59,6 +60,7 @@ public class Game extends JPanel {
     static int xframe;
     static int yframe;
     static JFrame frame;
+    static boolean backgroundDrawn = false;
     
     //bigger screen = more enemies
     static double screenSizeMultiplier;
