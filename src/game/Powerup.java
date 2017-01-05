@@ -17,6 +17,19 @@ public class Powerup {
     Powerups type;
     String typeString;
     
+    public Powerup(){
+        size = 20;
+        x = 0; 
+        y = 0;
+    }
+    
+    public Powerup(int xx, int yy) {
+        x = xx;
+        y = yy;
+        size = 20;
+        setType(Math.random());
+    }
+    
     public int getSize() {
         return size;
     }

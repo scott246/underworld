@@ -87,6 +87,11 @@ public class Player {
         traps = 0;
     }
     
+    public static void resetPlayerLocation() {
+        x = Game.roundLocation((int)xframe/2, size);
+        y = Game.roundLocation((int)yframe/2, size);
+    }
+    
     public static void knockbackPlayer() {
         switch(lastDir){
             case 1: //up

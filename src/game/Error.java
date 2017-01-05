@@ -61,6 +61,11 @@ public class Error {
                 activeError = Errors.HITRAPS;
                 Game.information = "You can't have more than 10 traps set";
                 break;
+            case HIBOW:
+                errors = true;
+                activeError = Errors.HIBOW;
+                Game.information = "You already have a bow!";
+                break;
             case NOERROR:
                 errors = false;
                 activeError = Errors.NOERROR;

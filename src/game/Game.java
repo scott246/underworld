@@ -20,6 +20,7 @@ import java.awt.Graphics;
 import java.awt.event.*;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +44,7 @@ public class Game extends JPanel {
     static Enemy[] enemyList = new Enemy[ENEMIES];
     
     //rock variables
-    static int ROCKS = 10000;
+    static int ROCKS = 100000;
     static Rock[] rockList = new Rock[ROCKS];
     
     //powerup variables
@@ -111,27 +112,73 @@ public class Game extends JPanel {
      *      continue until you reach the bottom right edge of the screen
      */
     public static void generateMap() {
-        //create the screen size multiplier
-        switch (xframe){
-            case 640: //640x480
-                screenSizeMultiplier = 1;
-                break;
-            case 800: //800x600
-                screenSizeMultiplier = 1.5;
-                break;
-            case 1280: //1280x720
-                screenSizeMultiplier = 4;
-                break;
-            case 1920: //1920x1080
-                screenSizeMultiplier = 9;
-                break;
-            default:
-                screenSizeMultiplier = 16;
-                break;
+        int leftScreen = Rock.size * 7;
+        int topScreen = Rock.size * 2;
+        int rightScreen = xframe - Rock.size;
+        int bottomScreen = yframe - Rock.size * 3;
+        //start with a grid of filled cells and a cell list
+        Rock[][] grid = new Rock[xframe/20 + 1][yframe/20 + 1];
+        for (int a = 0; a < xframe; a += 20){
+            for (int b = 0; b < yframe; b += 20){
+                grid[a/20][b/20] = new Rock(a, b);
+            }
         }
         
-        //density of rocks (lower = more dense)
-        double densityMultiplier = 3;
+        ArrayList<Rock> cellList = new ArrayList<>();
+        
+        //mark middle cell as part of the maze
+        grid[xframe/20/2][yframe/20/2] = null;
+        
+        //add surrounding filled cells to the cell list
+        cellList.add(grid[xframe/20/2 - 1][yframe/20/2]);
+        cellList.add(grid[xframe/20/2][yframe/20/2 - 1]);
+        cellList.add(grid[xframe/20/2][yframe/20/2 + 1]);
+        cellList.add(grid[xframe/20/2 + 1][yframe/20/2]);
+        
+        //while there are cells in the list
+        while (!cellList.isEmpty()){
+            //pick a random cell from the list
+            int cellNumber = (int)(Math.random() * cellList.size());
+            Rock r = cellList.get(cellNumber);
+            //if cell doesn't have two explored neighbors
+            int exploredNeighbors = 0;
+            if (r.x + 20 < rightScreen && r.y + 20 < bottomScreen &&
+                r.x - 1 > leftScreen && r.y - 1 > topScreen){
+                if (grid[(r.x)/20 - 1][(r.y)/20] == null) exploredNeighbors++;
+                if (grid[(r.x)/20][(r.y)/20 - 1] == null) exploredNeighbors++;
+                if (grid[(r.x)/20][(r.y)/20 + 1] == null) exploredNeighbors++;
+                if (grid[(r.x)/20 + 1][(r.y)/20] == null) exploredNeighbors++;
+            }
+            if (exploredNeighbors < 2 && r.x < xframe && r.y < yframe){
+                //clear cell
+                grid[(r.x)/20][(r.y)/20] = null;
+                //add neighboring filled cells to cell list
+                if (r.x + 20 < rightScreen && r.y + 20 < bottomScreen &&
+                    r.x - 1 > leftScreen && r.y - 1 > topScreen){
+                    if (!cellList.contains(grid[(r.x)/20 - 1][(r.y)/20]) && grid[(r.x)/20 - 1][(r.y)/20] != null) cellList.add(grid[(r.x)/20 - 1][(r.y)/20]);
+                    if (!cellList.contains(grid[(r.x)/20][(r.y)/20 - 1]) && grid[(r.x)/20][(r.y)/20 - 1] != null) cellList.add(grid[(r.x)/20][(r.y)/20 - 1]);
+                    if (!cellList.contains(grid[(r.x)/20][(r.y)/20 + 1]) && grid[(r.x)/20][(r.y)/20 + 1] != null) cellList.add(grid[(r.x)/20][(r.y)/20 + 1]);
+                    if (!cellList.contains(grid[(r.x)/20 + 1][(r.y)/20]) && grid[(r.x)/20 + 1][(r.y)/20] != null) cellList.add(grid[(r.x)/20 + 1][(r.y)/20]);
+                }
+            }
+                
+            //remove cell from list
+            cellList.remove(cellNumber);
+        }
+            
+            
+        //add filled cells to rockList
+        int rockListPos = 0;
+        ROCKS = 0;
+        for (int c = 0; c < xframe/20; c++){
+            for (int d = 0; d < yframe/20; d++){
+                if (grid[c][d] != null){
+                    rockList[rockListPos] = grid[c][d];
+                    rockListPos++;
+                    ROCKS++;
+                }
+            }
+        }
         
         //control number of powerups spawned for larger screen sizes
         double sspm = 0; //sspm = screen size powerup multiplier
@@ -156,18 +203,14 @@ public class Game extends JPanel {
         //density of powerups (lower = less dense)
         double powerupFrequency = .03 * sspm;
         
-        ROCKS = 10000;
-        int power = (int)Math.ceil((1 + Math.random()) * densityMultiplier);
-        
-        int rockCount = 0;
+        //generate a border with the rocks
+        POWERUPS = 0;
+        int rockCount = ROCKS;
         int powerupCount = 0;
         for (int a = 0; a < xframe; a+=Rock.size) {
             for (int b = 0; b < yframe; b+=Rock.size) {
-                if (!terrain) power = yframe;
-                while(power > 0) {
-                    
-                    //use the rocks to generate a border
-                    if (
+                //use the rocks to generate a border
+                if (
                         //left border
                         a == 0 || a == Rock.size || a == Rock.size * 2 ||
                         a == Rock.size * 3 || a == Rock.size * 4 || a == Rock.size * 5 ||
@@ -181,87 +224,28 @@ public class Game extends JPanel {
                         b == roundLocation(yframe, Rock.size)-Rock.size * 2 ||
                         b == roundLocation(yframe, Rock.size)-Rock.size * 3 ||
                         b == roundLocation(yframe, Rock.size)) {
-                        rockList[rockCount] = new Rock();
-                        rockList[rockCount].setX(roundLocation(a, Rock.size));
-                        rockList[rockCount].setY(roundLocation(b, Rock.size)); 
-                        if (rockCount++ >= ROCKS-1) {
-                            System.out.println("return called 1");
-                            System.out.println("ROCKS: "+ROCKS+", ROCKCOUNT: "+rockCount);
-                            return;
-                        }
-                    }
-                    
-                    //generate powerups
+                    rockList[rockCount] = new Rock();
+                    ROCKS++;
+                    rockList[rockCount].setX(roundLocation(a, Rock.size));
+                    rockList[rockCount].setY(roundLocation(b, Rock.size)); 
+                    rockCount++;
+                }
+                
+                //if it's not a border, and not a rock location, there's a chance to put down a powerup
+                else if (grid[a/20][b/20] == null) {
                     if (Math.random() < powerupFrequency) {
-                        if (powerupCount <= POWERUPS-1) {
                             powerupList[powerupCount] = new Powerup();
                             powerupList[powerupCount].setX(roundLocation(
                                     a, Powerup.size));
                             powerupList[powerupCount].setY(roundLocation(
                                     b, Powerup.size));
                             powerupList[powerupCount].setType(Math.random());
-//                            //ensure powerups don't spawn in unreachable spots
-//                            //  (i.e. spots with rocks surrounding all sides)
-//                            boolean up = false;
-//                            boolean left = false;
-//                            boolean down = false;
-//                            boolean right = false;
-//                            for (int c = 0; c < ROCKS; b++){
-//                                if (powerupList[powerupCount].getX() + 
-//                                        powerupList[powerupCount].getSize() == 
-//                                        rockList[c].getX()) 
-//                                    right = true;
-//                                if (powerupList[powerupCount].getX() - 
-//                                        powerupList[powerupCount].getSize() == 
-//                                        rockList[c].getX())  
-//                                    left = true;
-//                                if (powerupList[powerupCount].getY() + 
-//                                        powerupList[powerupCount].getSize() == 
-//                                        rockList[c].getY())  
-//                                    up = true;
-//                                if (powerupList[powerupCount].getY() - 
-//                                        powerupList[powerupCount].getSize() == 
-//                                        rockList[c].getY())  
-//                                    down = true;
-//                            }
-//                            if (up && left && down && right) {
-//                                powerupList[powerupCount].setY(
-//                                        powerupList[powerupCount].getY() + 
-//                                        powerupList[powerupCount].getSize()*2);
-//                            }
-                            if (powerupCount++ >= POWERUPS-1) {
-                                powerupCount--;
-                            }
-                        }
+                            powerupCount++;
+                            POWERUPS++;
                     }
-                    b += 20;
-                    power--;
                 }
-                
-                //avoid having rocks spawn on player
-                if (roundLocation(a, Rock.size) == store.x &&
-                        roundLocation(b, Rock.size) == store.y) {
-                    b -= Rock.size;
-                }
-                
-                //make the rock
-                rockList[rockCount] = new Rock();
-                rockList[rockCount].setX(roundLocation(a, Rock.size));
-                rockList[rockCount].setY(roundLocation(b, Rock.size));
-                if (rockCount++ >= ROCKS-1) {
-                    System.out.println("return called 2");
-                    System.out.println("ROCKS: "+ROCKS+", ROCKCOUNT: "+rockCount);
-                    return;
-                }
-                
-                
-                //generate new power and start over
-                power = (int)Math.ceil(
-                        (Math.random() + Math.random()) * densityMultiplier);
             }
         }
-        ROCKS = rockCount;
-        POWERUPS = powerupCount;
     }
     
     /**
@@ -279,6 +263,25 @@ public class Game extends JPanel {
      * Spawns bad guys randomly in the map
      */
     public static void generateEnemies() {
+        //create the screen size multiplier
+        switch (xframe){
+            case 640: //640x480
+                screenSizeMultiplier = 1;
+                break;
+            case 800: //800x600
+                screenSizeMultiplier = 1.5;
+                break;
+            case 1280: //1280x720
+                screenSizeMultiplier = 4;
+                break;
+            case 1920: //1920x1080
+                screenSizeMultiplier = 9;
+                break;
+            default:
+                screenSizeMultiplier = 16;
+                break;
+        }
+        
         ENEMIES = (int)Math.ceil(10 * level * screenSizeMultiplier);
         for (int a = 0; a < ENEMIES; a++){            
             Enemy e = new Enemy();
@@ -430,6 +433,7 @@ public class Game extends JPanel {
         level++;
         aiTimer = 0;
         Trap.resetTraps();
+        Player.resetPlayerLocation();
     }
     
     /**

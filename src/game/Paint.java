@@ -96,9 +96,6 @@ public class Paint {
             }
         }
         
-
-        
-        
         //draw enemies
         g.setFont(munroDisplay);
         for(int a = 0; a < ENEMIES; a++){
@@ -273,6 +270,12 @@ public class Paint {
         g.setColor(Color.WHITE);
         String ttext = p.traps + " Traps";
         graphics.drawString(ttext, 10, 140);
+        
+        //bow
+        g.setColor(Color.WHITE);
+        if (Player.bow) {
+            graphics.drawString("Bow", 10, 160);
+        }
 
         //alive time
         g.setColor(Color.WHITE);
@@ -282,13 +285,13 @@ public class Paint {
 
         //attack magic
         g.setColor(Color.WHITE);
-        String atext = p.attackMagic + " Attack";
-        graphics.drawString(atext, 10, yframe - graphics.getFontMetrics().getHeight() * 5);
+        String atext = p.attackMagic + " Attack Magic";
+        graphics.drawString(atext, 10, 180);
         
         //defense magic
         g.setColor(Color.WHITE);
-        String dtext = p.defenseMagic + " Defense";
-        graphics.drawString(dtext, 10, yframe - graphics.getFontMetrics().getHeight() * 4);
+        String dtext = p.defenseMagic + " Defense Magic";
+        graphics.drawString(dtext, 10, 200);
 
         //enemies killed
         g.setColor(Color.LIGHT_GRAY);
@@ -326,12 +329,12 @@ public class Paint {
             String text1 = "GAME OVER\n"
                     + "==PRESS [r] TO RESTART==\n"
                     + "\n"
-                    + "==High Scores==\n"
-                    + Database.getHighScore(1)+"\n"
-                    + Database.getHighScore(2)+"\n"
-                    + Database.getHighScore(3)+"\n"
-                    + Database.getHighScore(4)+"\n"
-                    + Database.getHighScore(5)+"\n";
+                    + "==Your High Scores==\n"
+                    + Database.getHighScore(1)+" Enemies Killed\n"
+                    + Database.getHighScore(2)+" Enemies Killed\n"
+                    + Database.getHighScore(3)+" Enemies Killed\n"
+                    + Database.getHighScore(4)+" Enemies Killed\n"
+                    + Database.getHighScore(5)+" Enemies Killed\n";
             int ptexty = yframe/3 + graphics.getFontMetrics().getHeight();
             for (String line : text1.split("\n")) {
                 graphics.drawString(
@@ -358,7 +361,7 @@ public class Paint {
                     + "[8] Buy Arrow: "+Store.arrowPrice+" Gold\n"
                     + "[9] Buy Trap: "+Store.trapPrice+" Gold\n";
             int xtextx = 10;
-            int ytexty = yframe/2 - (graphics.getFontMetrics().getHeight() * 9)/2;
+            int ytexty = yframe*2/3 - (graphics.getFontMetrics().getHeight() * 9)/2;
             for (String line : storeMenu.split("\n")) {
                 graphics.drawString(
                         line, 

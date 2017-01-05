@@ -20,4 +20,5 @@ public enum Errors {
     HIHP,
     HIMANA,
     HITRAPS,
+    HIBOW,
 }

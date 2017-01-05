@@ -14,6 +14,18 @@ public class Rock {
     int x = 0;
     int y = 0;
     
+    public Rock(){
+        size = 20;
+        x = 0;
+        y = 0;
+    }
+    
+    public Rock(int xx, int yy) {
+        size = 20;
+        x = xx;
+        y = yy;
+    }
+    
     public int getSize() {
         return size;
     }

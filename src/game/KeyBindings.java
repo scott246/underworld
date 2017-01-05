@@ -392,9 +392,13 @@ public class KeyBindings {
                     //buy bow if in store
                     case KeyEvent.VK_7:
                         if (Game.collisionDetect(Player.x, Player.y, Store.x, Store.y)) {
-                            if (Player.gp >= Store.bowPrice) {
+                            if (Player.gp >= Store.bowPrice && !Player.bow) {
                                 Player.gp -= Store.bowPrice;
                                 Player.bow = true;
+                            }
+                            else if (Player.bow) {
+                                Error.activeError = Errors.HIBOW;
+                                Error.errors = true;
                             }
                             else if (Player.gp < Store.bowPrice){
                                 Error.activeError = Errors.NOGOLD;
