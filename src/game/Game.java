@@ -9,7 +9,6 @@
  * adjust difficulty
  * add armor/shield feature
  * fix input lag
- * ensure there's always a path to everywhere
  * add more animation
  */
 package game;
@@ -83,6 +82,7 @@ public class Game extends JPanel {
     static boolean playerIsDead = false;
     static String information = "";
     static String terminalCommand = "";
+    static boolean noClip = false;
 
     public Game(int width, int height) throws IOException {
         xframe = width;
@@ -315,30 +315,6 @@ public class Game extends JPanel {
             }
             
             if (enemyInRock) continue;
-
-            
-//            //ensure enemies don't spawn in unreachable spots
-//            //  (i.e. spots with rocks surrounding all sides)
-//            boolean up = false;
-//            boolean left = false;
-//            boolean down = false;
-//            boolean right = false;
-//            for (int b = 0; b < ROCKS; b++){
-//                if (tempX + e.getSize() == rockList[b].getX()
-//                        && tempY == rockList[b].getY()) right = true;
-//                if (tempX - e.getSize() == rockList[b].getX()
-//                        && tempY == rockList[b].getY()) left = true;
-//                if (tempY + e.getSize() == rockList[b].getY()
-//                        && tempX == rockList[b].getX()) up = true;
-//                if (tempY - e.getSize() == rockList[b].getY()
-//                        && tempX == rockList[b].getX()) down = true;
-//            }
-//            if (up && left && down && right) {
-//                ENEMIES--;
-//                a--;
-//                continue;
-//            }
-//            
             
             //set enemy properties
             e.setHP((int)Math.ceil((Math.random() * e.getMaxHP() * (level * .15))));
@@ -589,7 +565,7 @@ public class Game extends JPanel {
                             p.bow = true;
                             break;
                         case "lildamage":
-                            p.minDamage = p.maxDamage;
+                             p.minDamage = p.maxDamage;
                             break;
                         case "massivedamage":
                             p.maxDamage += 20;
@@ -616,6 +592,9 @@ public class Game extends JPanel {
                             p.attackMagic += 20;
                             p.defenseMagic += 20;
                             p.traps += 20;
+                            break;
+                        case "noclip":
+                            noClip = true;
                             break;
                         default:
                             break;
@@ -796,7 +775,8 @@ public class Game extends JPanel {
                             p.x, 
                             p.y, 
                             rockList[a].getX(), 
-                            rockList[a].getY())){
+                            rockList[a].getY()) &&
+                            !noClip){
                         p.knockbackPlayer();
                     }
                     

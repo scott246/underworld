@@ -34,7 +34,7 @@ public class Player {
         moving = true;
         boolean collision = false;
         for (int a = 0; a < ROCKS; a++){
-            if (Game.collisionDetect(x-size, y, Game.rockList[a].getX(), Game.rockList[a].getY()))
+            if (Game.collisionDetect(x-size, y, Game.rockList[a].getX(), Game.rockList[a].getY()) && !Game.noClip)
                 collision = true;
         }
         if (!collision) x -= size;
@@ -44,7 +44,7 @@ public class Player {
         moving = true;
         boolean collision = false;
         for (int a = 0; a < ROCKS; a++){
-            if (Game.collisionDetect(x+size, y, Game.rockList[a].getX(), Game.rockList[a].getY()))
+            if (Game.collisionDetect(x+size, y, Game.rockList[a].getX(), Game.rockList[a].getY()) && !Game.noClip)
                 collision = true;
         }
         if (!collision) x += size;
@@ -54,7 +54,7 @@ public class Player {
         moving = true;
         boolean collision = false;
         for (int a = 0; a < ROCKS; a++){
-            if (Game.collisionDetect(x, y-size, Game.rockList[a].getX(), Game.rockList[a].getY()))
+            if (Game.collisionDetect(x, y-size, Game.rockList[a].getX(), Game.rockList[a].getY()) && !Game.noClip)
                 collision = true;
         }
         if (!collision) y -= size;
@@ -64,7 +64,7 @@ public class Player {
         moving = true;
         boolean collision = false;
         for (int a = 0; a < ROCKS; a++){
-            if (Game.collisionDetect(x, y+size, Game.rockList[a].getX(), Game.rockList[a].getY()))
+            if (Game.collisionDetect(x, y+size, Game.rockList[a].getX(), Game.rockList[a].getY()) && !Game.noClip)
                 collision = true;
         }
         if (!collision) y += size;
